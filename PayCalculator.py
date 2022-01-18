@@ -17,6 +17,14 @@ def getRPI(yearSelected):
     rpi = induvidualYear["value"]
     return rpi
 
+def getPayData(yearSelected, gradeSelected): 
+    response = requests.get('https://raw.githubusercontent.com/BarkingTree/PythonPayCalculator/master/englandPay.json') 
+    jsonData = response.json()
+    payYears = jsonData["Years"]
+    induvidualYear = payYears[yearSelected]
+    pay = induvidualYear[gradeSelected]
+    return pay
+
 with st.container():
     st.title('Medics For Pay Restoration')
     st.subheader('Calculate Your Pay Cut - England')
@@ -47,4 +55,4 @@ weekendsWorked = st.select_slider(
     options=[ '<1:8', '<1:7 - 1:8', '<1:6 - 1:7', '<1:5 - 1:6', '<1:4 - 1:5', '<1:3 - 1:4', '<1:2 - 1:3', '1:2',])
 
 st.write(getRPI(slider_year_selected.year))
-
+st.write(getPayData(2008, 'FY1'))
