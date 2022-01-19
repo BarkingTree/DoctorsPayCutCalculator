@@ -20,6 +20,14 @@ additionalHourEnhancement = 0.025
 nrocMultiplier = 0.08
 ltft = False
 
+@st.cache
+def weekendAllowance(yearSelected): 
+    response = requests.get('https://raw.githubusercontent.com/BarkingTree/PythonPayCalculator/master/englandPay.json') 
+    jsonData = response.json()
+    induvidualYear = jsonData[str(yearSelected)]
+    allowance = induvidualYear['WeekendAllowance']
+    return allowance
+
 # Get RPI Data and Cache It
 @st.cache
 def getRPIJSON(inflationMeasure): 
@@ -52,7 +60,8 @@ def getPayData(yearSelected, gradeSelected):
     return pay
 
 def currentPay(yearSelected, gradeSelected, nroc, ltft, weekendsWorked = '<1:8'): 
-    weekendMultiplier = 0
+
+    weekAllowance = weekendAllowance(yearSelected)
     basePay = getPayData(yearSelected, gradeSelected)
     resultsArray = []
     # Caluclate Pay if < 40 Hours Per Week
@@ -62,21 +71,21 @@ def currentPay(yearSelected, gradeSelected, nroc, ltft, weekendsWorked = '<1:8')
         ltftPay = round(oneHourPay * hoursWorked)
         ltftAllowance = 1000
         if weekendsWorked == '<1:8': 
-            weekendMultiplier = 0
+            weekendMultiplier = weekAllowance[0]
         if weekendsWorked == '<1:7 - 1:8':
-            weekendMultiplier = 0.03
+            weekendMultiplier = weekAllowance[1]
         if weekendsWorked == '<1:6 - 1:7': 
-            weekendMultiplier = 0.04
+            weekendMultiplier = weekAllowance[2]
         if weekendsWorked == '<1:5 - 1:6': 
-            weekendMultiplier = 0.05
+            weekendMultiplier = weekAllowance[3]
         if weekendsWorked == '<1:4 - 1:5': 
-            weekendMultiplier = 0.06
+            weekendMultiplier = weekAllowance[4]
         if weekendsWorked == '<1:3 - 1:4': 
-            weekendMultiplier = 0.075
+            weekendMultiplier = weekAllowance[5]
         if weekendsWorked == '<1:2 - 1:3': 
-            weekendMultiplier = 0.10
+            weekendMultiplier = weekAllowance[6]
         if weekendsWorked == '1:2':
-            weekendMultiplier = 0.15
+            weekendMultiplier = weekAllowance[7]
         if nroc: 
             nrocPay = (nrocMultiplier * basePay) * percentageWorked
         else:
