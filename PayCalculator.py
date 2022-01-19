@@ -169,11 +169,15 @@ def oldPay(yearSelected, gradeSelected, hours, antiSocialHours, ltft, weekendsWo
         if worksOneinSixWeekends or percentAntiSocialHours > 0.33: 
             #Band FA
             banding = 1.5
-        elif percentAntiSocialHours > 0:
+        elif percentAntiSocialHours > 0.15:
             #Band FB 
             banding = 1.4
-        elif percentAntiSocialHours == 0: 
+        elif percentAntiSocialHours > 0: 
+            # Banding FC
             banding = 1.2
+        elif percentAntiSocialHours == 0:
+            # Unbanded
+            banding = 1
         bandedBasePay = basePay * baseSalaryBanding
         totalPayRaw = bandedBasePay * banding
         totalPayRounded = round(totalPayRaw)
@@ -200,12 +204,15 @@ def oldPay(yearSelected, gradeSelected, hours, antiSocialHours, ltft, weekendsWo
         if worksOneInFourWeekends or percentAntiSocialHours > 0.33: 
             #Band 1A
             banding = 1.5
-        elif percentAntiSocialHours > 0:
+        elif percentAntiSocialHours > 0.15:
             #Band 1B 
             banding = 1.4
-        elif percentAntiSocialHours == 0: 
+        elif percentAntiSocialHours > 0: 
             # Band 1C. Likely to require rework
             banding = 1.2
+        elif percentAntiSocialHours == 0:
+            # Unbanded
+            banding = 1
         totalPayRaw = basePay * banding
         totalPayRounded = round(totalPayRaw)
         resultsArray = [totalPayRounded, round(basePay) ,banding]
@@ -239,9 +246,10 @@ st.subheader('Hours')
 hoursWorked = st.slider('Total Hours Worked Per Week', 20, 48, 40)
 if hoursWorked < 40:
     ltft = True 
-antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00 (2016 Contract Antisocial)?', 0, 20, 0)
-antisocialHoursOld = st.slider('Hours Worked Outside of 07:00 - 19:00 (2002 Contract Antisocial)?', 0, 20, 0)
-st.write('Do you recieve the Non-Resident On Call Supplement?')
+st.subheader("Antisocial Hours")
+antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00 (2016 Contract)', 0, 20, 6)
+antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00 (2002 Contract)', 0, 20, 12)
+st.write('Do you recieve the Non-Resident On Call Supplement (2016 Contract)?')
 nroc = st.checkbox('Non-Resident On Call')
 
 st.subheader('Weekends Worked')
