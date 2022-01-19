@@ -147,7 +147,6 @@ def oldPay(yearSelected, gradeSelected, hours, antiSocialHours, ltft, weekendsWo
         if worksOneinSixWeekends or percentAntiSocialHours > 0.33: 
             #Band FA
             banding = 1.5
-            
         else:
             #Band FB 
             banding = 1.4
@@ -221,15 +220,22 @@ weekendsWorked = st.select_slider(
 currentInflation = getRPI(adjustedDate.year, inflationMeasure)
 selectedInflation = getRPI(slider_year_selected.year, inflationMeasure)
 inflationChange = float(currentInflation) - float(selectedInflation)
-payArray = currentPay(2021, grade, nroc, ltft ,weekendsWorked)
+payArray = currentPay(adjustedDate.year, grade, nroc, ltft ,weekendsWorked)
 payArrayOld = oldPay(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, weekendsWorked)
 inflationPercentage = float(currentInflation) / float(selectedInflation)
 inflationPercentageDisplay = round(inflationPercentage * 100)
 oldPayWithInflation = payArrayOld[0] * inflationPercentage
 
-relativePayLoss = payArray[0] - oldPayWithInflation
-st.metric 
+relativePayLoss = round(payArray[0] - oldPayWithInflation)
+percentageLoss = round(relativePayLoss / payArray[0] * 100)
 
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric('Pay Loss', f'£{relativePayLoss}', percentageLoss)
+with col2:
+     st.metric('2008 Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}')
+with col3: 
+     st.metric(f'{adjustedDate.year}', f'£{payArray[0]}', percentageLoss)
 col1, col2 = st.columns(2)
 with col1:
     st.subheader(f'{slider_year_selected.year}')
