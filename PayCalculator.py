@@ -1,8 +1,5 @@
-from ctypes import alignment
 from nis import match
-from unicodedata import decimal
 from urllib import response
-from nbformat import write
 import streamlit as st
 from PIL import Image
 import json 
@@ -286,8 +283,8 @@ if country == 'England':
         contractSelected = [2016, 2016]
 else:
 # All other Countries
-    payArray = payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, weekendsWorked)
-    payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, weekendsWorked)        
+    payArray = payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)
+    payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)        
     contractSelected = [2002, 2002]
 
 # Determine Inflation Change
@@ -297,7 +294,8 @@ inflationChange = float(currentInflation) - float(selectedInflation)
 inflationPercentage = float(currentInflation) / float(selectedInflation)
 
 # Inflation for Display
-inflationPercentageDisplay = round(inflationPercentage * 100)
+inflationPercentageChange = float(inflationChange) / float(selectedInflation)
+inflationPercentageDisplay = round(inflationPercentageChange * 100)
 
 # Calculate Lossess Adjusting for Inflation
 oldPayWithInflation = payArrayOld[0] * inflationPercentage
@@ -318,7 +316,7 @@ with col2:
     
 with col3:
     st.metric(f'{adjustedDate.year}', f'£{payArray[0]}', f'{percentageLoss}%')
-    st.metric(f'{inflationMeasure} Index:', currentInflation, f'{inflationPercentageDisplay}%')
+    st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
     st.caption(f'Since {slider_year_selected.year}')
 
 st.subheader('Calculations')
