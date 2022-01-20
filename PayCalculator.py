@@ -361,4 +361,4 @@ with col2:
         if ltft == True: 
             st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
         st.caption('Based of the 2016 Contract')
-st.write("[Join the Campaignink](https://linktr.ee/Medics4PayRestoration)")
+st.write("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
