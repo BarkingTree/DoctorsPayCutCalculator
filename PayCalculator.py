@@ -228,7 +228,7 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
 with st.container():
     st.title('Medics For Pay Restoration')
     st.subheader('Calculate Your Pay Cut')
-    st.subheader("Join the Campaign[link](https://linktr.ee/Medics4PayRestoration)")
+    st.write("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
 
 country = st.selectbox(
     'Select Country',
@@ -361,4 +361,4 @@ with col2:
         if ltft == True: 
             st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
         st.caption('Based of the 2016 Contract')
-st.subheader("Join the Campaign[link](https://linktr.ee/Medics4PayRestoration)")
+st.write("[Join the Campaignink](https://linktr.ee/Medics4PayRestoration)")
