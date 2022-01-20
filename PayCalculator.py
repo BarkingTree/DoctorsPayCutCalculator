@@ -10,6 +10,8 @@ import requests
 from dateutil.relativedelta import relativedelta
 import numpy as np
 
+st.set_page_config('Pay Calculator', page_icon=' 🩺')
+
 # See Excel CalculationFile for Calculation Details 
 antiocialEnhancementPerHour = 0.00925
 additionalHourEnhancement = 0.025
@@ -47,17 +49,23 @@ def getRPI(yearSelected, inflationMeasure):
     return rpi
 
 # Get Pay Data from GitHub Repo
-def getPayData(yearSelected, gradeSelected): 
-    response = requests.get('https://raw.githubusercontent.com/BarkingTree/PythonPayCalculator/master/englandPay.json') 
+def getPayData(yearSelected, gradeSelected, country): 
+    if country == 'England': 
+        response = requests.get('https://raw.githubusercontent.com/BarkingTree/PythonPayCalculator/master/englandPay.json') 
+    elif country == 'Scotland':
+        response = requests.get('https://raw.githubusercontent.com/BarkingTree/PythonPayCalculator/master/scotlandPay.json')
+    elif country == 'Wales':
+        response = requests.get('https://raw.githubusercontent.com/BarkingTree/PythonPayCalculator/master/walesPay.json')
+    elif country == 'Northern Ireland':
+        response = requests.get('https://raw.githubusercontent.com/BarkingTree/PythonPayCalculator/master/niPay.json')   
     jsonData = response.json()
     induvidualYear = jsonData[str(yearSelected)]
     pay = induvidualYear[gradeSelected]
     return pay
 
-def currentPay(yearSelected, gradeSelected, nroc, ltft, weekendsWorked = '<1:8'): 
-
+def payNewContract(yearSelected, gradeSelected, nroc, ltft, country ,weekendsWorked = '<1:8'): 
     weekAllowance = weekendAllowance(yearSelected)
-    basePay = getPayData(yearSelected, gradeSelected)
+    basePay = getPayData(yearSelected, gradeSelected, country)
     resultsArray = []
     # Caluclate Pay if < 40 Hours Per Week
     if ltft == True:
@@ -85,7 +93,6 @@ def currentPay(yearSelected, gradeSelected, nroc, ltft, weekendsWorked = '<1:8')
             nrocPay = (nrocMultiplier * basePay) * percentageWorked
         else:
             nrocPay = 0
-        
         additionalHoursPay = 0
         antisocialPay = basePay * (antisocialHours * antiocialEnhancementPerHour) 
         weekendPay = (basePay * (weekendMultiplier / 100 )) * percentageWorked    
@@ -124,11 +131,12 @@ def currentPay(yearSelected, gradeSelected, nroc, ltft, weekendsWorked = '<1:8')
         resultsArray = [totalPayRounded, basePay, antisocialPay, additionalHoursPay, weekendPay, nrocPay, 0]
         return resultsArray
 
-def oldPay(yearSelected, gradeSelected, hours, antiSocialHours, ltft, weekendsWorked): 
+def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, country, weekendsWorked): 
     percentAntiSocialHours = antiSocialHours / hours
-    basePay = getPayData(yearSelected, gradeSelected)
+    basePay = getPayData(yearSelected, gradeSelected, country)
     resultsArray = []
     banding = 0 
+    bandingString = ""
     # Caluclate Pay if < 40 Hours Per Week
     if ltft == True:
         worksOneinSixWeekends = False
@@ -163,19 +171,23 @@ def oldPay(yearSelected, gradeSelected, hours, antiSocialHours, ltft, weekendsWo
         if worksOneinSixWeekends or percentAntiSocialHours > 0.33: 
             #Band FA
             banding = 1.5
+            bandingString = '1A'
         elif percentAntiSocialHours > 0.15:
             #Band FB 
             banding = 1.4
+            bandingString = '1B'
         elif percentAntiSocialHours > 0: 
             # Banding FC
             banding = 1.2
+            bandingString = '1C'
         elif percentAntiSocialHours == 0:
             # Unbanded
             banding = 1
+            bandingString = 'Unbanded'
         bandedBasePay = basePay * baseSalaryBanding
         totalPayRaw = bandedBasePay * banding
         totalPayRounded = round(totalPayRaw)
-        resultsArray = [totalPayRounded, round(bandedBasePay), banding]
+        resultsArray = [totalPayRounded, round(bandedBasePay), banding, bandingString]
     
     if ltft == False:
         worksOneInFourWeekends = False
@@ -198,24 +210,33 @@ def oldPay(yearSelected, gradeSelected, hours, antiSocialHours, ltft, weekendsWo
         if worksOneInFourWeekends or percentAntiSocialHours > 0.33: 
             #Band 1A
             banding = 1.5
+            bandingString = '1A'
         elif percentAntiSocialHours > 0.15:
             #Band 1B 
             banding = 1.4
-        elif percentAntiSocialHours > 0: 
+            bandingString = '1B'
+        elif hours > 40:
             # Band 1C. Likely to require rework
             banding = 1.2
-        elif percentAntiSocialHours == 0:
-            # Unbanded
+            bandingString = '1C'
+        elif hours == 40:
+            # Unbanded only applies to those completing 40 Hour weeks.
             banding = 1
+            bandingString = 'Unbanded'
         totalPayRaw = basePay * banding
         totalPayRounded = round(totalPayRaw)
-        resultsArray = [totalPayRounded, round(basePay) ,banding]
+        resultsArray = [totalPayRounded, round(basePay) ,banding, bandingString]
     return resultsArray
 
 with st.container():
     st.title('Medics For Pay Restoration')
-    st.subheader('Calculate Your Pay Cut - England')
-    
+    st.subheader('Calculate Your Pay Cut')
+
+country = st.selectbox(
+    'Select Country',
+    ('England', 'Scotland' ,'Wales', 'Northern Ireland')
+)
+
 from datetime import date
 currentDate = date.today()
 adjustedDate = currentDate - relativedelta(years= 1, days=19)
@@ -253,19 +274,33 @@ weekendsWorked = st.select_slider(
     '<1:8 = Work One in Eight Weekends', 
     options=[ '<1:8', '<1:7 - 1:8', '<1:6 - 1:7', '<1:5 - 1:6', '<1:4 - 1:5', '<1:3 - 1:4', '<1:2 - 1:3', '1:2'])
 
-#Change on Release
+# Determine which contract to use and Calculate Pay Data for Selected and Current Year
+if country == 'England':
+    if slider_year_selected < date(2017, 1, 1): 
+        contractSelected = [2002, 2016]
+        payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
+        payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)
+    elif slider_year_selected > date(2017, 1, 1): 
+        payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
+        payArrayOld = payNewContract(slider_year_selected.year, grade, nroc, ltft, country ,weekendsWorked)
+        contractSelected = [2016, 2016]
+else:
+# All other Countries
+    payArray = payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, weekendsWorked)
+    payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, weekendsWorked)        
+    contractSelected = [2002, 2002]
+
+# Determine Inflation Change
 currentInflation = getRPI(adjustedDate.year, inflationMeasure)
 selectedInflation = getRPI(slider_year_selected.year, inflationMeasure)
 inflationChange = float(currentInflation) - float(selectedInflation)
-payArray = currentPay(adjustedDate.year, grade, nroc, ltft ,weekendsWorked)
-if slider_year_selected < date(2017, 1, 1): 
-    payArrayOld = oldPay(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, weekendsWorked)
-elif slider_year_selected > date(2017, 1, 1):
-    payArrayOld = currentPay(slider_year_selected.year, grade, nroc, ltft ,weekendsWorked)
 inflationPercentage = float(currentInflation) / float(selectedInflation)
-inflationPercentageDisplay = round(inflationPercentage * 100)
-oldPayWithInflation = payArrayOld[0] * inflationPercentage
 
+# Inflation for Display
+inflationPercentageDisplay = round(inflationPercentage * 100)
+
+# Calculate Lossess Adjusting for Inflation
+oldPayWithInflation = payArrayOld[0] * inflationPercentage
 relativePayLoss = round(payArray[0] - oldPayWithInflation)
 percentageLoss = round(relativePayLoss / payArray[0] * 100)
 change = ""
@@ -274,44 +309,57 @@ if oldPayWithInflation < payArray[0]:
 elif oldPayWithInflation > payArray[0]:
     change = "-Loss"
 
+# Show Pay + Inflation Details
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric('Pay Loss', f'£{relativePayLoss}', change)
-with col2:
-     st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}')
-with col3: 
-     st.metric(f'{adjustedDate.year}', f'£{payArray[0]}', f'{percentageLoss}%')
-col1, col2 = st.columns(2)
+    st.metric('Pay Loss', f'£{relativePayLoss}', change)    
+with col2: 
+    st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
+    
+with col3:
+    st.metric(f'{adjustedDate.year}', f'£{payArray[0]}', f'{percentageLoss}%')
+    st.metric(f'{inflationMeasure} Index:', currentInflation, f'{inflationPercentageDisplay}%')
+    st.caption(f'Since {slider_year_selected.year}')
 
+st.subheader('Calculations')
+# Show Calculation Details
+col1, col2,= st.columns(2)
 with col1:
-    if slider_year_selected < date(2017, 1, 1): 
+    if contractSelected[0] == 2002: 
+        st.write(f'{slider_year_selected.year}')
+        st.caption(f'Your Pay: £{payArrayOld[0]}')
+        st.caption(f'Base Pay: £{payArrayOld[1]}')
+        st.caption(f'Your Banding: {payArrayOld[3]} = {payArrayOld[2]} Multiplier to Base')
+        st.caption('Based of the 2002 Contract')
+    if contractSelected[0] == 2016:
         st.subheader(f'{slider_year_selected.year}')
-        st.subheader(f'Your Pay: £{payArrayOld[0]}')
-        st.write(f'Base Pay: £{payArrayOld[1]}')
-        st.write(f'Your Banding: {payArrayOld[2]}')
-        st.write('Based of the 2002 Contract')
-    if slider_year_selected > date(2017, 1, 1):
-        st.subheader(f'{slider_year_selected.year}')
-        st.subheader(f'Your Pay: £{round(payArrayOld[0])}')
-        st.write(f'Base Pay: £{round(payArrayOld[1])}')
-        st.write(f'Antisocial Hours Supplement: £{round(payArrayOld[2])}')
+        st.caption(f'Your Pay: £{round(payArrayOld[0])}')
+        st.caption(f'Base Pay: £{round(payArrayOld[1])}')
+        st.caption(f'Antisocial Hours Supplement: £{round(payArrayOld[2])}')
         if ltft == False: 
-            st.write(f'Supplement for > 40 Hours Per Week £{round(payArrayOld[3])}')
-            st.write(f'Weekend Supplement: £{round(payArrayOld[4])}')
-            st.write(f'Non Resident On Call Supplement: £{round(payArrayOld[5])}')
+            st.caption(f'Weekend Supplement: £{round(payArrayOld[4])}')
+            st.caption(f'Non Resident On Call Supplement: £{round(payArrayOld[5])}')
             if ltft == True: 
-                st.write(f'Less Than Full Time Allowance: £{round(payArrayOld[6])}')
-            
+                st.caption(f'Less Than Full Time Allowance: £{round(payArrayOld[6])}')
+            st.caption('Based of the 2016 Contract')
 
 with col2: 
-    st.subheader(f'{adjustedDate.year}')
-    st.subheader(f'Your Pay: £{payArray[0]}')
-    st.write(f'Base Pay: £{payArray[1]}')
-    st.write(f'Antisocial Hours Supplement: £{round(payArray[2])}')
-    if ltft == False: 
-        st.write(f'Supplement for > 40 Hours Per Week £{round(payArray[3])}')
-    st.write(f'Weekend Supplement: £{round(payArray[4])}')
-    st.write(f'Non Resident On Call Supplement: £{round(payArray[5])}')
-    if ltft == True: 
-        st.write(f'Less Than Full Time Allowance: £{round(payArray[6])}')
+    if contractSelected[1] == 2002: 
+        st.write(f'{adjustedDate.year}')
+        st.caption(f'Your Pay: £{payArray[0]}')
+        st.caption(f'Base Pay: £{payArray[1]}')
+        st.caption(f'Your Banding: {payArray[3]} = {payArrayOld[2]} Multiplier to Base')
+        st.caption('Based of the 2002 Contract')
+    if contractSelected[1] == 2016:
+        st.write(f'{adjustedDate.year}')
+        st.caption(f'Your Pay: £{round(payArray[0])}')
+        st.caption(f'Base Pay: £{round(payArray[1])}')
+        st.caption(f'Antisocial Hours Supplement: £{round(payArray[2])}')
+        if ltft == False: 
+            st.caption(f'Supplement for > 40 Hours Per Week £{round(payArray[3])}')
+        st.caption(f'Weekend Supplement: £{round(payArray[4])}')
+        st.caption(f'Non Resident On Call Supplement: £{round(payArray[5])}')
+        if ltft == True: 
+            st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
+        st.caption('Based of the 2016 Contract')
 
