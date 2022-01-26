@@ -312,11 +312,11 @@ weekendsWorked = st.select_slider(
 manuallySelectedBinding = 'Unbanded'
 antisocialHoursOld = 6
 if contractSelected[0] == 2002: 
-    st.header('2002 Contract')
-    manualBanding = st.checkbox('Add Your Banding Manually', False)
+    st.header('2002 Contract Details')
+    manualBanding = st.checkbox('Manually Select Banding', False)
     if manualBanding == False:
         st.subheader(' Antisocial Hours')
-        antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
+        antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00 (Allows Aproximate Banding Calculation).', 0, 20, 12)
     elif manualBanding == True:
         st.subheader('2002 Contract Banding')
         if ltft == True:
@@ -325,8 +325,7 @@ if contractSelected[0] == 2002:
             manuallySelectedBinding = st.selectbox('Select Your Banding', ['Unbanded', '1C', '1B', '1A'])
             st.write('[Summary of Banding](https://www.bma.org.uk/pay-and-contracts/pay/pay-banding/how-pay-banding-works)')
 elif contractSelected[0] == 2016:
-    st.markdown("***")
-    st.header('2016 Contract')
+    st.header('2016 Contract Details')
     st.subheader('Antisocial Hours')
     antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
     st.write('Do you recieve the Non-Resident On Call Supplement?')
@@ -337,7 +336,7 @@ if contractSelected[0] != contractSelected[1]:
         st.subheader('2002 Contract Antisocial Hours')
         antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
     elif contractSelected[1] == 2016: 
-        st.header('2016 Contract')
+        st.header('2016 Contract Details')
         st.subheader('Antisocial Hours')
         antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
         st.write('Do you recieve the Non-Resident On Call Supplement?')
