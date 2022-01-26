@@ -340,7 +340,7 @@ with col3:
     st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
     st.caption(f'Since {slider_year_selected.year}')
 
-st.subheader('Calculations')
+st.subheader('Calculation Breakdown')
 # Show Calculation Details
 col1, col2,= st.columns(2)
 with col1:
@@ -369,6 +369,7 @@ with col2:
         st.caption(f'Base Pay: £{payArray[1]}')
         st.caption(f'Your Banding: {payArray[3]} = {payArrayOld[2]} Multiplier to Base')
         st.caption('Based of the 2002 Contract')
+        
     if contractSelected[1] == 2016:
         st.write(f'{adjustedDate.year}')
         st.caption(f'Your Pay: £{round(payArray[0])}')
@@ -382,4 +383,6 @@ with col2:
             st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
         st.caption('Based of the 2016 Contract')
 # Links to Join 
-st.write("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
+st.header("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
+if contractSelected[1] == 2002 or contractSelected[0] == 2002:
+    st.caption(f'Please note that due to difficulties in accurately calculating banding for the 2002 contract these figures may not be 100% accurate. However, they do provide an overview of the pay erosion which your have sufferred from since {slider_year_selected.year}.')
