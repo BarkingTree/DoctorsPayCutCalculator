@@ -128,7 +128,7 @@ def payNewContract(yearSelected, gradeSelected, nroc, ltft, country ,weekendsWor
         resultsArray = [totalPayRounded, basePay, antisocialPay, additionalHoursPay, weekendPay, nrocPay, 0]
         return resultsArray
 
-def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, country, weekendsWorked): 
+def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, country, weekendsWorked, onCall): 
     percentAntiSocialHours = antiSocialHours / hours
     basePay = getPayData(yearSelected, gradeSelected, country)
     resultsArray = []
@@ -136,6 +136,7 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
     bandingString = ""
     # Caluclate Pay if < 40 Hours Per Week
     if ltft == True:
+        onCallClassification = ''
         worksOneinSixWeekends = False
         baseSalaryBanding = 0 
         percentageWorked = int((hours / 40) * 100)
@@ -165,7 +166,15 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
             worksOneinSixWeekends = True
         if weekendsWorked == '1:2':
            worksOneinSixWeekends = True
-        if worksOneinSixWeekends or percentAntiSocialHours > 0.33: 
+        if onCall == '> 1:10': 
+            onCallClassification = 'A'
+        if onCall == '≥ 1:13.5 With Prospective Cover':
+            onCallClassification == 'A'
+        if onCall == '≤ 1:13.5 Without Prospective Cover': 
+            onCallClassification = 'C'
+        if onCall == 'None': 
+            onCallClassification = 'None'
+        if worksOneinSixWeekends or percentAntiSocialHours > 0.33 or onCallClassification == 'A': 
             #Band FA
             banding = 1.5
             bandingString = '1A'
@@ -173,7 +182,7 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
             #Band FB 
             banding = 1.4
             bandingString = '1B'
-        elif percentAntiSocialHours > 0: 
+        elif percentAntiSocialHours > 0 or onCallClassification == 'C': 
             # Banding FC
             banding = 1.2
             bandingString = '1C'
@@ -188,6 +197,7 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
     
     if ltft == False:
         worksOneInFourWeekends = False
+        onCallClassification = ''
         if weekendsWorked == '<1:8': 
             worksOneInFourWeekends = False
         if weekendsWorked == '<1:7 - 1:8':
@@ -204,7 +214,15 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
             worksOneInFourWeekends = True
         if weekendsWorked == '1:2':
            worksOneInFourWeekends = True
-        if worksOneInFourWeekends or percentAntiSocialHours > 0.33: 
+        if onCall == '> 1:6': 
+            onCallClassification = 'A'
+        if onCall == '≥1:8 - 1:6 With Prospective Cover': 
+            onCallClassification = 'A'
+        if onCall == '≤1:8 Without Prospective Cover': 
+            onCallClassification = 'C'
+        if onCall == 'None': 
+            onCallClassification = "None"
+        if worksOneInFourWeekends or percentAntiSocialHours > 0.33 or onCallClassification == 'A': 
             #Band 1A
             banding = 1.5
             bandingString = '1A'
@@ -212,7 +230,7 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
             #Band 1B 
             banding = 1.4
             bandingString = '1B'
-        elif hours > 40:
+        elif hours > 40 or onCallClassification == 'C' or onCallClassification == 'None':
             # Band 1C. Likely to require rework
             banding = 1.2
             bandingString = '1C'
@@ -275,7 +293,14 @@ if hoursWorked < 40:
 if contractSelected[0] == 2002: 
     st.subheader('2002 Contract Antisocial Hours')
     antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
-
+    if ltft == False:
+        onCallFrequency = st.select_slider(
+        'On Call Rota Frequency',
+        options = ['None', '≤ 1:8 Without Prospective Cover', '≥ 1:8 - 1:6 With Prospective Cover', '> 1:6'])
+    elif ltft == True: 
+        onCallFrequency = st.select_slider(
+        'On Call Rota Frequency',
+        options = ['None', '≤ 1:13.5 Without Prospective Cover', '≥ 1:13.5 With Prospective Cover', '> 1:10'])
 elif contractSelected[0] == 2016: 
     st.subheader('2016 Contract Antisocial Hours')
     antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
@@ -286,6 +311,9 @@ if contractSelected[0] != contractSelected[1]:
     if contractSelected[1] == 2002: 
         st.subheader('2002 Contract Antisocial Hours')
         antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
+        onCallFrequency = st.select_slider(
+        'On Call Rota Frequency',
+        options = ['None', '≤1:8 Without Prospective Cover', '≥1:8 - 1:6 With Prospective Cover', '> 1:6']) 
     elif contractSelected[1] == 2016: 
         st.subheader('2016 Contract Antisocial Hours')
         antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
