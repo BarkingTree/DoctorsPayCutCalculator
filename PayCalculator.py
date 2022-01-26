@@ -246,6 +246,16 @@ slider_year_selected = st.slider(
      # Change to month = 1 on release
      format="YYYY")
 
+# Determine Contracts to Display and Use
+if country == 'England':
+    if slider_year_selected < date(2017, 1, 1): 
+        contractSelected = [2002, 2016]
+    elif slider_year_selected > date(2017, 1, 1): 
+        contractSelected = [2016, 2016]
+else:
+# All other Countries       
+    contractSelected = [2002, 2002]
+
 inflationMeasure = st.selectbox(
     'Inflation Measure',
     ('RPI', 'CPIH')
@@ -255,38 +265,48 @@ grade = st.selectbox(
      'Select Your Grade',
      ('FY1', 'FY2', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7', 'ST8'))
 
-st.subheader('Hours')
+st.subheader('Average Hours Worked per Week')
 hoursWorked = st.slider('Total Hours Worked Per Week', 20, 48, 40)
 if hoursWorked < 40:
     ltft = True 
-st.subheader("Antisocial Hours")
-antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00 (2016 Contract)', 0, 20, 6)
-antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00 (2002 Contract)', 0, 20, 12)
-st.write('Do you recieve the Non-Resident On Call Supplement (2016 Contract)?')
-nroc = st.checkbox('Non-Resident On Call')
 
+# Only Display Parameters for Relevant Contract as Selected based on Country and Date (If comparing post 2016 contract introduction in
+# england)
+if contractSelected[0] == 2002: 
+    st.subheader('2002 Contract Antisocial Hours')
+    antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
+
+elif contractSelected[0] == 2016: 
+    st.subheader('2016 Contract Antisocial Hours')
+    antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
+    st.write('Do you recieve the Non-Resident On Call Supplement?')
+    nroc = st.checkbox('Recieve Non-Resident On Call')
+if contractSelected[0] != contractSelected[1]:
+    # Avoid Duplicating Display of Sliders
+    if contractSelected[1] == 2002: 
+        st.subheader('2002 Contract Antisocial Hours')
+        antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
+    elif contractSelected[1] == 2016: 
+        st.subheader('2016 Contract Antisocial Hours')
+        antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
+        st.write('Do you recieve the Non-Resident On Call Supplement?')
+        nroc = st.checkbox('Recieve Non-Resident On Call')
 st.subheader('Weekends Worked')
 if ltft == True: 
     st.write('Please Select the number of Weekends you would work if working Full-Time')
 weekendsWorked = st.select_slider(
     '<1:8 = Work One in Eight Weekends', 
-    options=[ '<1:8', '<1:7 - 1:8', '<1:6 - 1:7', '<1:5 - 1:6', '<1:4 - 1:5', '<1:3 - 1:4', '<1:2 - 1:3', '1:2'])
+    options=[ '<1:8', '<1:7 - 1:8', '<1:6 - 1:7', '<1:5 - 1:6', '<1:4 - 1:5', '<1:3 - 1:4', '<1:2 - 1:3', '1:2'])    
 
-# Determine which contract to use and Calculate Pay Data for Selected and Current Year
-if country == 'England':
-    if slider_year_selected < date(2017, 1, 1): 
-        contractSelected = [2002, 2016]
-        payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
-        payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)
-    elif slider_year_selected > date(2017, 1, 1): 
-        payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
-        payArrayOld = payNewContract(slider_year_selected.year, grade, nroc, ltft, country ,weekendsWorked)
-        contractSelected = [2016, 2016]
-else:
-# All other Countries
-    payArray = payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)
-    payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)        
-    contractSelected = [2002, 2002]
+# Determine which contract to use to calculate Pay Data for Selected and Current Year
+if contractSelected[0] == 2002: 
+    payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)
+elif contractSelected[0] == 2016: 
+     payArrayOld = payNewContract(slider_year_selected.year, grade, nroc, ltft, country ,weekendsWorked)
+if contractSelected[1] == 2002: 
+    payArray =  payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)
+elif contractSelected[1] == 2016: 
+    payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
 
 # Determine Inflation Change
 currentInflation = getRPI(adjustedDate.year, inflationMeasure)
@@ -316,7 +336,7 @@ with col2:
     st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
     
 with col3:
-    st.metric(f'{adjustedDate.year}', f'£{payArray[0]}', f'{percentageLoss}%')
+    st.metric(f'{adjustedDate.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
     st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
     st.caption(f'Since {slider_year_selected.year}')
 
@@ -361,4 +381,5 @@ with col2:
         if ltft == True: 
             st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
         st.caption('Based of the 2016 Contract')
+# Links to Join 
 st.write("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
