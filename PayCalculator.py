@@ -128,7 +128,7 @@ def payNewContract(yearSelected, gradeSelected, nroc, ltft, country ,weekendsWor
         resultsArray = [totalPayRounded, basePay, antisocialPay, additionalHoursPay, weekendPay, nrocPay, 0]
         return resultsArray
 
-def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, country, weekendsWorked): 
+def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, country, weekendsWorked, manualBinding, manuallySelectedBinding): 
     percentAntiSocialHours = antiSocialHours / hours
     basePay = getPayData(yearSelected, gradeSelected, country)
     resultsArray = []
@@ -168,58 +168,87 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
         if worksOneinSixWeekends or percentAntiSocialHours > 0.33: 
             #Band FA
             banding = 1.5
-            bandingString = '1A'
+            bandingString = 'FA'
         elif percentAntiSocialHours > 0.15:
             #Band FB 
             banding = 1.4
-            bandingString = '1B'
+            bandingString = 'FB'
         elif percentAntiSocialHours > 0: 
             # Banding FC
             banding = 1.2
-            bandingString = '1C'
+            bandingString = 'FC'
         elif percentAntiSocialHours == 0:
             # Unbanded
             banding = 1
             bandingString = 'Unbanded'
+        # Ovverride if Manually Selecting Binding
+        if manualBinding == True:
+            if manuallySelectedBinding == 'FA': 
+                banding = 1.5
+                bandingString = 'FA'
+            elif manuallySelectedBinding == 'FB':
+                banding = 1.4
+                bandingString = 'FB'
+            elif manuallySelectedBinding == 'FC':
+                banding = 1.2
+                bandingString = 'FC'
+            elif manuallySelectedBinding == 'Unbanded':
+                banding = 1
+                bandingString = 'Unbanded'
         bandedBasePay = basePay * baseSalaryBanding
         totalPayRaw = bandedBasePay * banding
         totalPayRounded = round(totalPayRaw)
         resultsArray = [totalPayRounded, round(bandedBasePay), banding, bandingString]
     
     if ltft == False:
-        worksOneInFourWeekends = False
-        if weekendsWorked == '<1:8': 
+        if manualBinding == False:
             worksOneInFourWeekends = False
-        if weekendsWorked == '<1:7 - 1:8':
-            worksOneInFourWeekends = False
-        if weekendsWorked == '<1:6 - 1:7': 
-            worksOneInFourWeekends = False
-        if weekendsWorked == '<1:5 - 1:6': 
-           worksOneInFourWeekends = False
-        if weekendsWorked == '<1:4 - 1:5': 
-            worksOneInFourWeekends = False
-        if weekendsWorked == '<1:3 - 1:4': 
-            worksOneInFourWeekends = True
-        if weekendsWorked == '<1:2 - 1:3': 
-            worksOneInFourWeekends = True
-        if weekendsWorked == '1:2':
-           worksOneInFourWeekends = True
-        if worksOneInFourWeekends or percentAntiSocialHours > 0.33: 
-            #Band 1A
-            banding = 1.5
-            bandingString = '1A'
-        elif percentAntiSocialHours > 0.15:
-            #Band 1B 
-            banding = 1.4
-            bandingString = '1B'
-        elif hours > 40:
-            # Band 1C. Likely to require rework
-            banding = 1.2
-            bandingString = '1C'
-        elif hours == 40:
-            # Unbanded only applies to those completing 40 Hour weeks.
-            banding = 1
-            bandingString = 'Unbanded'
+            if weekendsWorked == '<1:8': 
+                worksOneInFourWeekends = False
+            if weekendsWorked == '<1:7 - 1:8':
+                worksOneInFourWeekends = False
+            if weekendsWorked == '<1:6 - 1:7': 
+                worksOneInFourWeekends = False
+            if weekendsWorked == '<1:5 - 1:6': 
+                worksOneInFourWeekends = False
+            if weekendsWorked == '<1:4 - 1:5': 
+                worksOneInFourWeekends = False
+            if weekendsWorked == '<1:3 - 1:4': 
+                worksOneInFourWeekends = True
+            if weekendsWorked == '<1:2 - 1:3': 
+                worksOneInFourWeekends = True
+            if weekendsWorked == '1:2':
+                worksOneInFourWeekends = True
+            if worksOneInFourWeekends or percentAntiSocialHours > 0.33: 
+                #Band 1A
+                banding = 1.5
+                bandingString = '1A'
+            elif percentAntiSocialHours > 0.15:
+                #Band 1B 
+                banding = 1.4
+                bandingString = '1B'
+            elif hours > 40:
+                # Band 1C. Likely to require rework
+                banding = 1.2
+                bandingString = '1C'
+            elif hours == 40:
+                # Unbanded only applies to those completing 40 Hour weeks.
+                banding = 1
+                bandingString = 'Unbanded'
+       
+        if manualBinding == True:
+            if manuallySelectedBinding == '1A': 
+                banding = 1.5
+                bandingString = '1A'
+            elif manuallySelectedBinding == '1B':
+                banding = 1.4
+                bandingString = '1B'
+            elif manuallySelectedBinding == '1C':
+                banding = 1.2
+                bandingString = '1C'
+            elif manuallySelectedBinding == 'Unbanded':
+                banding = 1
+                bandingString = 'Unbanded'
         totalPayRaw = basePay * banding
         totalPayRounded = round(totalPayRaw)
         resultsArray = [totalPayRounded, round(basePay) ,banding, bandingString]
@@ -270,14 +299,35 @@ hoursWorked = st.slider('Total Hours Worked Per Week', 20, 48, 40)
 if hoursWorked < 40:
     ltft = True 
 
+st.subheader('Weekends Worked')
+if ltft == True: 
+    st.write('Please Select the number of Weekends you would work if working Full-Time')
+weekendsWorked = st.select_slider(
+    '<1:8 = Work One in Eight Weekends', 
+    options=[ '<1:8', '<1:7 - 1:8', '<1:6 - 1:7', '<1:5 - 1:6', '<1:4 - 1:5', '<1:3 - 1:4', '<1:2 - 1:3', '1:2'])    
+
+
 # Only Display Parameters for Relevant Contract as Selected based on Country and Date (If comparing post 2016 contract introduction in
 # england)
+manuallySelectedBinding = 'Unbanded'
+antisocialHoursOld = 6
 if contractSelected[0] == 2002: 
-    st.subheader('2002 Contract Antisocial Hours')
-    antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
-
-elif contractSelected[0] == 2016: 
-    st.subheader('2016 Contract Antisocial Hours')
+    st.header('2002 Contract')
+    manualBanding = st.checkbox('Add Your Banding Manually', False)
+    if manualBanding == False:
+        st.subheader(' Antisocial Hours')
+        antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
+    elif manualBanding == True:
+        st.subheader('2002 Contract Banding')
+        if ltft == True:
+            manuallySelectedBinding = st.selectbox('Select Your LTFT Banding' ['Unbanded', 'FC', 'FB', 'FA'])
+        elif ltft == False:
+            manuallySelectedBinding = st.selectbox('Select Your Banding', ['Unbanded', '1C', '1B', '1A'])
+            st.write('[Summary of Banding](https://www.bma.org.uk/pay-and-contracts/pay/pay-banding/how-pay-banding-works)')
+elif contractSelected[0] == 2016:
+    st.markdown("***")
+    st.header('2016 Contract')
+    st.subheader('Antisocial Hours')
     antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
     st.write('Do you recieve the Non-Resident On Call Supplement?')
     nroc = st.checkbox('Recieve Non-Resident On Call')
@@ -287,24 +337,19 @@ if contractSelected[0] != contractSelected[1]:
         st.subheader('2002 Contract Antisocial Hours')
         antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
     elif contractSelected[1] == 2016: 
-        st.subheader('2016 Contract Antisocial Hours')
+        st.header('2016 Contract')
+        st.subheader('Antisocial Hours')
         antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
         st.write('Do you recieve the Non-Resident On Call Supplement?')
         nroc = st.checkbox('Recieve Non-Resident On Call')
-st.subheader('Weekends Worked')
-if ltft == True: 
-    st.write('Please Select the number of Weekends you would work if working Full-Time')
-weekendsWorked = st.select_slider(
-    '<1:8 = Work One in Eight Weekends', 
-    options=[ '<1:8', '<1:7 - 1:8', '<1:6 - 1:7', '<1:5 - 1:6', '<1:4 - 1:5', '<1:3 - 1:4', '<1:2 - 1:3', '1:2'])    
 
 # Determine which contract to use to calculate Pay Data for Selected and Current Year
 if contractSelected[0] == 2002: 
-    payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)
+    payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
 elif contractSelected[0] == 2016: 
      payArrayOld = payNewContract(slider_year_selected.year, grade, nroc, ltft, country ,weekendsWorked)
 if contractSelected[1] == 2002: 
-    payArray =  payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked)
+    payArray =  payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
 elif contractSelected[1] == 2016: 
     payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
 
@@ -329,6 +374,7 @@ elif oldPayWithInflation > payArray[0]:
     change = "-Loss"
 
 # Show Pay + Inflation Details
+st.header('Summary')
 col1, col2, col3 = st.columns(3)
 with col1:
     st.metric('Pay Loss', f'£{relativePayLoss}', change)    
@@ -385,4 +431,4 @@ with col2:
 # Links to Join 
 st.header("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
 if contractSelected[1] == 2002 or contractSelected[0] == 2002:
-    st.caption(f'Please note that due to difficulties in accurately calculating banding for the 2002 contract these figures may not be 100% accurate. However, they do provide an overview of the pay erosion which your have sufferred from since {slider_year_selected.year}.')
+    st.caption(f'DISCLAIMER: Automatic Calculation of Banding may be innaccurate. Please select banding manually for the greatets accuracy.')
