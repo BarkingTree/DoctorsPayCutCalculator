@@ -320,7 +320,7 @@ if contractSelected[0] == 2002:
     elif manualBanding == True:
         st.subheader('2002 Contract Banding')
         if ltft == True:
-            manuallySelectedBinding = st.selectbox('Select Your LTFT Banding' ['Unbanded', 'FC', 'FB', 'FA'])
+            manuallySelectedBinding = st.selectbox('Select Your LTFT Banding', ['Unbanded', 'FC', 'FB', 'FA'])
         elif ltft == False:
             manuallySelectedBinding = st.selectbox('Select Your Banding', ['Unbanded', '1C', '1B', '1A'])
             st.write('[Summary of Banding](https://www.bma.org.uk/pay-and-contracts/pay/pay-banding/how-pay-banding-works)')
