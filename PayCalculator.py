@@ -255,7 +255,7 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
     return resultsArray
 
 with st.container():
-    st.title('Medics For Pay Restoration')
+    st.title('Junior Doctors Pay Calculator')
     st.subheader('Calculate Your Pay Cut')
     # Link to Campaign 
     # st.write("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
@@ -314,7 +314,7 @@ manuallySelectedBinding = 'Unbanded'
 antisocialHoursOld = 6
 if contractSelected[0] == 2002: 
     st.header('2002 Contract Details')
-    manualBanding = st.checkbox('Manually Select Banding', False)
+    manualBanding = st.checkbox('Manually Select Banding (Improves Accuracy)', False)
     if manualBanding == False:
         st.subheader(' Antisocial Hours')
         antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00 (Allows Aproximate Banding Calculation).', 0, 20, 12)
@@ -407,7 +407,7 @@ with col1:
             if ltft == True: 
                 st.caption(f'Less Than Full Time Allowance: £{round(payArrayOld[6])}')
             st.caption('Based of the 2016 Contract')
-
+    st.caption(f'Disclaimer: Figures given are approximate. The accuracy can be improved by selecting 2002 Banding manually.')
 with col2: 
     if contractSelected[1] == 2002: 
         st.write(f'{adjustedDate.year}')
@@ -415,7 +415,7 @@ with col2:
         st.caption(f'Base Pay: £{payArray[1]}')
         st.caption(f'Your Banding: {payArray[3]} = {payArrayOld[2]} Multiplier to Base')
         st.caption('Based of the 2002 Contract')
-        
+    
     if contractSelected[1] == 2016:
         st.write(f'{adjustedDate.year}')
         st.caption(f'Your Pay: £{round(payArray[0])}')
@@ -428,7 +428,6 @@ with col2:
         if ltft == True: 
             st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
         st.caption('Based of the 2016 Contract')
+    
 # Links to Join 
 # st.header("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
-
-st.write(f'Disclaimer: Figures given are approximate. Please select banding manually for the greatest accuracy as automatic calculation may be innacurate.')
