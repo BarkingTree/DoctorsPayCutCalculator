@@ -267,7 +267,7 @@ country = st.selectbox(
 
 from datetime import date
 currentDate = date.today()
-adjustedDate = currentDate - relativedelta(years= 1, days=19)
+adjustedDate = currentDate - relativedelta(years = 1, months = 1)
 st.subheader('Select Inflation Year')
 slider_year_selected = st.slider(
      "Select Year to Compare to",
