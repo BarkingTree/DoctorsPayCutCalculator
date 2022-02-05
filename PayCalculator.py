@@ -430,5 +430,5 @@ with col2:
         st.caption('Based of the 2016 Contract')
 # Links to Join 
 # st.header("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
-if contractSelected[1] == 2002 or contractSelected[0] == 2002:
-    st.caption(f'Disclaimer: Figures given are approximate. Please select banding manually for the greatest accuracy as automatic calculation may be innacurate.')
+
+st.write(f'Disclaimer: Figures given are approximate. Please select banding manually for the greatest accuracy as automatic calculation may be innacurate.')
