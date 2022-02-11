@@ -353,7 +353,7 @@ if contractSelected[1] == 2002:
 elif contractSelected[1] == 2016: 
     payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
 
-# Determine Inflation Change
+# Determine Inflation Change 
 currentInflation = getRPI(adjustedDate.year, inflationMeasure)
 selectedInflation = getRPI(slider_year_selected.year, inflationMeasure)
 inflationChange = float(currentInflation) - float(selectedInflation)
@@ -387,6 +387,7 @@ with col3:
     st.caption(f'Since {slider_year_selected.year}')
 
 st.subheader('Calculation Breakdown')
+st.caption(f'Disclaimer: Figures given are approximate. The accuracy can be improved by selecting 2002 Banding manually.')
 # Show Calculation Details
 col1, col2,= st.columns(2)
 with col1:
@@ -407,7 +408,7 @@ with col1:
             if ltft == True: 
                 st.caption(f'Less Than Full Time Allowance: £{round(payArrayOld[6])}')
             st.caption('Based of the 2016 Contract')
-    st.caption(f'Disclaimer: Figures given are approximate. The accuracy can be improved by selecting 2002 Banding manually.')
+    
 with col2: 
     if contractSelected[1] == 2002: 
         st.write(f'{adjustedDate.year}')
