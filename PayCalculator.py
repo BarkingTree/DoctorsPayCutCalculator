@@ -255,8 +255,9 @@ def payOldContract(yearSelected, gradeSelected, hours, antiSocialHours, ltft, co
     return resultsArray
 
 with st.container():
-    st.title('Junior Doctors Pay Calculator')
+    st.title('Doctors Pay Cut Calculator')
     st.subheader('Calculate Your Pay Cut')
+    
     # Link to Campaign 
     # st.write("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
 
@@ -294,6 +295,8 @@ st.subheader('Your Grade')
 grade = st.selectbox(
      'Select Your Grade',
      ('FY1', 'FY2', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7', 'ST8'))
+
+# Junior Doctor Pay 
 
 st.subheader('Average Hours Worked per Week')
 hoursWorked = st.slider('Total Hours Worked Per Week', 20, 48, 40)
@@ -430,5 +433,4 @@ with col2:
             st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
         st.caption('Based of the 2016 Contract')
     
-# Links to Join 
-# st.header("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
+# Consultant Pay 
