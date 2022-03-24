@@ -42,8 +42,10 @@ def getRPI(yearSelected, inflationMeasure):
     if inflationMeasure == 'CPIH': 
         indexAdjustment = 1988
     rpiYears = getRPIJSON(inflationMeasure)
-    yearToUse = yearSelected - indexAdjustment
-    induvidualYear = rpiYears[0][f'{yearToUse} Q4']
+    yearToUse = ((yearSelected) - indexAdjustment)  * 4
+    # By applying the * 4 and + 3 you take the Q4 measurement of inflation rather than inflation on a year by year basis. 
+    # This keeps the calculator more up to date 
+    induvidualYear = rpiYears[yearToUse + 3]
     rpi = induvidualYear["value"]
     return rpi
 
