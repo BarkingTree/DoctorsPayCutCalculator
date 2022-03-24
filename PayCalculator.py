@@ -524,7 +524,7 @@ elif grade == 'Consultant':
                 st.write(f'{slider_year_selected.year}')
                 st.caption(f'Your Pay: £{payArrayOld[0]}')
                 st.caption(f'Base Pay: £{payArrayOld[1]}')
-                st.caption(f'Based On {programmedActivities} per Week')
+                st.caption(f'Based On {programmedActivities} Programmed Activities per Week')
                 st.caption(f'Nodal Point: {payArrayOld[2]}') 
             
                 
