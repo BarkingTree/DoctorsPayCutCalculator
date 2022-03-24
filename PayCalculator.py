@@ -31,7 +31,7 @@ def getRPIJSON(inflationMeasure):
     if inflationMeasure == 'CPIH': 
         response = requests.get('https://api.ons.gov.uk/timeseries/L522/dataset/mm23/data')
     jsonData = response.json()
-    rpiYears = jsonData["years"]
+    rpiYears = jsonData["quarters"]
     return rpiYears
 
 def getRPI(yearSelected, inflationMeasure): 
@@ -42,7 +42,7 @@ def getRPI(yearSelected, inflationMeasure):
     if inflationMeasure == 'CPIH': 
         indexAdjustment = 1988
     rpiYears = getRPIJSON(inflationMeasure)
-    induvidualYear = rpiYears[yearSelected - indexAdjustment]
+    induvidualYear = rpiYears[f'{yearSelected - indexAdjustment} Q4']
     rpi = induvidualYear["value"]
     return rpi
 
