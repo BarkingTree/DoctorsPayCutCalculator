@@ -471,69 +471,69 @@ if grade != 'Consultant':
             if ltft == True: 
                 st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
             st.caption('Based of the 2016 Contract')
+elif grade == 'Consultant':
+    if country != 'Northern Ireland':    
+        # Consultant Pay Section
+        st.subheader('Programmed Activities')
+        programmedActivities = st.slider('Average Number of Programmed Activities per Week', 1, 16, 10)
+        st.subheader('Number of Years as a Consultant')
+        yearsCompleted = st.slider('Years as a Consultant', 0, 30, 4)
 
-if country != 'Northern Ireland':    
-    # Consultant Pay Section
-    st.subheader('Programmed Activities')
-    programmedActivities = st.slider('Average Number of Programmed Activities per Week', 1, 16, 10)
-    st.subheader('Number of Years as a Consultant')
-    yearsCompleted = st.slider('Years as a Consultant', 0, 30, 4)
+        #Pull Data 
+        payArrayOld = consultantContract(programmedActivities, slider_year_selected.year, grade ,yearsCompleted)
+        payArray = consultantContract(programmedActivities, adjustedDate.year, grade ,yearsCompleted)
 
-    #Pull Data 
-    payArrayOld = consultantContract(programmedActivities, slider_year_selected.year, grade ,yearsCompleted)
-    payArray = consultantContract(programmedActivities, adjustedDate.year, grade ,yearsCompleted)
+        # Determine Inflation Change 
+        currentInflation = getRPI(adjustedDate.year, inflationMeasure)
+        selectedInflation = getRPI(slider_year_selected.year, inflationMeasure)
+        inflationChange = float(currentInflation) - float(selectedInflation)
+        inflationPercentage = float(currentInflation) / float(selectedInflation)
 
-    # Determine Inflation Change 
-    currentInflation = getRPI(adjustedDate.year, inflationMeasure)
-    selectedInflation = getRPI(slider_year_selected.year, inflationMeasure)
-    inflationChange = float(currentInflation) - float(selectedInflation)
-    inflationPercentage = float(currentInflation) / float(selectedInflation)
+        # Inflation for Display
+        inflationPercentageChange = float(inflationChange) / float(selectedInflation)
+        inflationPercentageDisplay = round(inflationPercentageChange * 100)
 
-    # Inflation for Display
-    inflationPercentageChange = float(inflationChange) / float(selectedInflation)
-    inflationPercentageDisplay = round(inflationPercentageChange * 100)
+        # Calculate Lossess Adjusting for Inflation
+        oldPayWithInflation = payArrayOld[0] * inflationPercentage
+        relativePayLoss = round(payArray[0] - oldPayWithInflation)
+        percentageLoss = round(relativePayLoss / payArray[0] * 100)
+        change = ""
+        if oldPayWithInflation < payArray[0]: 
+            change = "+Gain"
+        elif oldPayWithInflation > payArray[0]:
+            change = "-Loss"
 
-    # Calculate Lossess Adjusting for Inflation
-    oldPayWithInflation = payArrayOld[0] * inflationPercentage
-    relativePayLoss = round(payArray[0] - oldPayWithInflation)
-    percentageLoss = round(relativePayLoss / payArray[0] * 100)
-    change = ""
-    if oldPayWithInflation < payArray[0]: 
-        change = "+Gain"
-    elif oldPayWithInflation > payArray[0]:
-        change = "-Loss"
+        # Show Pay + Inflation Details
+            st.header('Summary')
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric('Pay Loss', f'£{relativePayLoss}', change)    
+            with col2: 
+                st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
+                
+            with col3:
+                st.metric(f'{adjustedDate.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
+                st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
+                st.caption(f'Since {slider_year_selected.year}')
 
-    # Show Pay + Inflation Details
-        st.header('Summary')
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric('Pay Loss', f'£{relativePayLoss}', change)    
-        with col2: 
-            st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
+            st.subheader('Calculation Breakdown')
+            st.caption(f'Disclaimer: Figures given are approximate only and purely based of your base salary. Based of 2003 Contract.')
+            # Show Calculation Details
+            col1, col2,= st.columns(2)
+            with col1:
+                st.write(f'{slider_year_selected.year}')
+                st.caption(f'Your Pay: £{payArrayOld[0]}')
+                st.caption(f'Base Pay: £{payArrayOld[1]}')
+                st.caption(f'Based On {programmedActivities} per Week')
+                st.caption(f'Nodal Point: {payArrayOld[2]}') 
             
-        with col3:
-            st.metric(f'{adjustedDate.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
-            st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
-            st.caption(f'Since {slider_year_selected.year}')
-
-        st.subheader('Calculation Breakdown')
-        st.caption(f'Disclaimer: Figures given are approximate only and purely based of your base salary. Based of 2003 Contract.')
-        # Show Calculation Details
-        col1, col2,= st.columns(2)
-        with col1:
-            st.write(f'{slider_year_selected.year}')
-            st.caption(f'Your Pay: £{payArrayOld[0]}')
-            st.caption(f'Base Pay: £{payArrayOld[1]}')
-            st.caption(f'Based On {programmedActivities} per Week')
-            st.caption(f'Nodal Point: {payArrayOld[2]}') 
-           
-            
-        with col2: 
-            st.write(f'{adjustedDate.year}')
-            st.caption(f'Your Pay: £{payArray[0]}')
-            st.caption(f'Base Pay: £{payArray[1]}')
-            st.caption(f'Based On {programmedActivities} Programmed Activities per Week')
-            st.caption(f'Nodal Pay Point: {payArray[2]}')
-            
-else: 
-    st.subheader('Data Unavailable')
+                
+            with col2: 
+                st.write(f'{adjustedDate.year}')
+                st.caption(f'Your Pay: £{payArray[0]}')
+                st.caption(f'Base Pay: £{payArray[1]}')
+                st.caption(f'Based On {programmedActivities} Programmed Activities per Week')
+                st.caption(f'Nodal Pay Point: {payArray[2]}')
+                
+    else: 
+        st.subheader('Data Unavailable')
