@@ -23,7 +23,7 @@ def weekendAllowance(yearSelected):
     allowance = induvidualYear['WeekendAllowance']
     return allowance
 
-# Get RPI Data and Cache It
+# Get RPI / CPIH Data and Cache It
 @st.cache
 def getRPIJSON(inflationMeasure): 
     if inflationMeasure == 'RPI': 
@@ -31,8 +31,8 @@ def getRPIJSON(inflationMeasure):
     if inflationMeasure == 'CPIH': 
         response = requests.get('https://api.ons.gov.uk/timeseries/L522/dataset/mm23/data')
     jsonData = response.json()
-    rpiYears = jsonData["quarters"]
-    return rpiYears
+    inflationYears = jsonData["years"]
+    return inflationYears
 
 def getRPI(yearSelected, inflationMeasure): 
     indexAdjustment = 0 
@@ -42,10 +42,11 @@ def getRPI(yearSelected, inflationMeasure):
     if inflationMeasure == 'CPIH': 
         indexAdjustment = 1988
     rpiYears = getRPIJSON(inflationMeasure)
-    yearToUse = ((yearSelected) - indexAdjustment)  * 4
+    yearToUse = ((yearSelected) - indexAdjustment) 
     # By applying the * 4 and + 3 you take the Q4 measurement of inflation rather than inflation on a year by year basis. 
     # This keeps the calculator more up to date 
-    induvidualYear = rpiYears[yearToUse + 3]
+    induvidualYear = rpiYears[yearToUse]
+    # Add +3 to Year to use to if using Quarterly inflation to use Q4. 
     rpi = induvidualYear["value"]
     return rpi
 
