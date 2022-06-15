@@ -16,6 +16,14 @@ additionalHourEnhancement = 0.025
 nrocMultiplier = 0.08
 ltft = False
 
+# Dates 
+from datetime import date, timedelta
+currentDate = date.today()
+yearsPost2022 = date.today().year - 2022 
+adjustedDate = currentDate - relativedelta(years= yearsPost2022)
+# Prevents adjusted Date from going past 2022. This allows access to Quartely inflation figures but prevents applciation attempting to parse Pay JSON when no data is avaliable. 
+# Formally was adjustedDate = currentDate - relativedelta(years = 1, months = 0)
+
 def weekendAllowance(yearSelected): 
     response = requests.get('https://raw.githubusercontent.com/BarkingTree/PythonPayCalculator/master/englandPay.json') 
     jsonData = response.json()
@@ -23,32 +31,32 @@ def weekendAllowance(yearSelected):
     allowance = induvidualYear['WeekendAllowance']
     return allowance
 
+
 # Get RPI / CPIH Data and Cache It
 @st.cache
-def getRPIJSON(inflationMeasure): 
+def getInflationJSON(inflationMeasure): 
     if inflationMeasure == 'RPI': 
         response = requests.get('https://api.ons.gov.uk/timeseries/chaw/dataset/mm23/data') 
     if inflationMeasure == 'CPIH': 
         response = requests.get('https://api.ons.gov.uk/timeseries/L522/dataset/mm23/data')
     jsonData = response.json()
     inflationYears = jsonData["years"]
-    return inflationYears
+    inflationQuarters = jsonData["quarters"]
+    print(inflationQuarters)
+    return inflationQuarters
 
-def getRPI(yearSelected, inflationMeasure): 
-    indexAdjustment = 0 
-    # Adjust for Year Indexes Started
+def getInflationIndex(date, inflationMeasure): 
+    adjustedArrayIndex = 0 
+    # Adjust for Years Indexes Started
     if inflationMeasure == 'RPI': 
-        indexAdjustment = 1987
+        adjustedArrayIndex = (((date.year - 1986) * 4) - 4) + ((date.month-1)//3)
     if inflationMeasure == 'CPIH': 
-        indexAdjustment = 1988
-    rpiYears = getRPIJSON(inflationMeasure)
-    yearToUse = ((yearSelected) - indexAdjustment) 
-    # By applying the * 4 and + 3 you take the Q4 measurement of inflation rather than inflation on a year by year basis. 
-    # This keeps the calculator more up to date 
-    induvidualYear = rpiYears[yearToUse]
-    # Add +3 to Year to use to if using Quarterly inflation to use Q4. 
-    rpi = induvidualYear["value"]
-    return rpi
+        adjustedArrayIndex = (((date.year - 1987) * 4) - 4) + ((date.month-1)//3)
+    inflationArray = getInflationJSON(inflationMeasure)
+    induvidualQuarter = inflationArray[adjustedArrayIndex]
+    inflationIndex = induvidualQuarter["value"]
+    return inflationIndex
+
 
 # Get Pay Data from GitHub Repo
 def getPayData(yearSelected, gradeSelected, country): 
@@ -306,16 +314,16 @@ country = st.selectbox(
     ('England', 'Scotland' ,'Wales', 'Northern Ireland')
 )
 
-from datetime import date
-currentDate = date.today()
-adjustedDate = currentDate - relativedelta(years = 1, months = 1)
 st.subheader('Select Inflation Year')
 slider_year_selected = st.slider(
-     "Select Year to Compare to",
+     "Select Quarter to Compare to",
      min_value= date(2008, 1, 1),
-     max_value= adjustedDate ,
+     max_value= adjustedDate,
+     value= date(2008, 1, 1),
      # Change to month = 1 on release
-     format="YYYY")
+     format="Qo/YYYY",
+     step= timedelta(days=90)
+     )
 
 # Determine Contracts to Display and Use
 if country == 'England':
@@ -336,162 +344,76 @@ grade = st.selectbox(
      'Select Your Grade',
      ('FY1', 'FY2', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7', 'ST8', 'Consultant'))
 
-# Junior Doctor Pay 
-if grade != 'Consultant': 
-    st.subheader('Average Hours Worked per Week')
-    hoursWorked = st.slider('Total Hours Worked Per Week', 20, 48, 40)
-    if hoursWorked < 40:
-        ltft = True 
+    # Check if Values Avaliable 
+if payNewContract(adjustedDate.year, grade, False, False, country, '<1:8') != 0:   
+    # Junior Doctor Pay 
+    if grade != 'Consultant': 
+        st.subheader('Average Hours Worked per Week')
+        hoursWorked = st.slider('Total Hours Worked Per Week', 20, 48, 44)
+        if hoursWorked < 40:
+            ltft = True 
 
-    st.subheader('Weekends Worked')
-    if ltft == True: 
-        st.write('Please Select the number of Weekends you would work if working Full-Time')
-    weekendsWorked = st.select_slider(
-        '<1:8 = Work One in Eight Weekends', 
-        options=[ '<1:8', '<1:7 - 1:8', '<1:6 - 1:7', '<1:5 - 1:6', '<1:4 - 1:5', '<1:3 - 1:4', '<1:2 - 1:3', '1:2'])    
+        st.subheader('Weekends Worked')
+        if ltft == True: 
+            st.write('Please Select the number of Weekends you would work if working Full-Time')
+        weekendsWorked = st.select_slider(
+            '<1:8 = Work One in Eight Weekends', 
+            options=[ '<1:8', '<1:7 - 1:8', '<1:6 - 1:7', '<1:5 - 1:6', '<1:4 - 1:5', '<1:3 - 1:4', '<1:2 - 1:3', '1:2'], value= '<1:6 - 1:7')    
 
 
-    # Only Display Parameters for Relevant Contract as Selected based on Country and Date (If comparing post 2016 contract introduction in
-    # england)
-    manuallySelectedBinding = 'Unbanded'
-    antisocialHoursOld = 6
-    if contractSelected[0] == 2002: 
-        st.header('2002 Contract Details')
-        manualBanding = st.checkbox('Manually Select Banding (Improves Accuracy)', False)
-        if manualBanding == False:
-            st.subheader(' Antisocial Hours')
-            antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00 (Allows Aproximate Banding Calculation).', 0, 20, 12)
-        elif manualBanding == True:
-            st.subheader('2002 Contract Banding')
-            if ltft == True:
-                manuallySelectedBinding = st.selectbox('Select Your LTFT Banding', ['Unbanded', 'FC', 'FB', 'FA'])
-            elif ltft == False:
-                manuallySelectedBinding = st.selectbox('Select Your Banding', ['Unbanded', '1C', '1B', '1A'])
-                st.write('[Summary of Banding](https://www.bma.org.uk/pay-and-contracts/pay/pay-banding/how-pay-banding-works)')
-    elif contractSelected[0] == 2016:
-        st.header('2016 Contract Details')
-        st.subheader('Antisocial Hours')
-        antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
-        st.write('Do you recieve the Non-Resident On Call Supplement?')
-        nroc = st.checkbox('Recieve Non-Resident On Call')
-    if contractSelected[0] != contractSelected[1]:
-        # Avoid Duplicating Display of Sliders
-        if contractSelected[1] == 2002: 
-            st.subheader('2002 Contract Antisocial Hours')
-            antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
-        elif contractSelected[1] == 2016: 
+        # Only Display Parameters for Relevant Contract as Selected based on Country and Date (If comparing post 2016 contract introduction in
+        # england)
+        manuallySelectedBinding = 'Unbanded'
+        antisocialHoursOld = 6
+        if contractSelected[0] == 2002: 
+            st.header('2002 Contract Details')
+            manualBanding = st.checkbox('Manually Select Banding (Improves Accuracy)', False)
+            if manualBanding == False:
+                st.subheader(' Antisocial Hours')
+                antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00 (Allows Aproximate Banding Calculation).', 0, 20, 12)
+            elif manualBanding == True:
+                st.subheader('2002 Contract Banding')
+                if ltft == True:
+                    manuallySelectedBinding = st.selectbox('Select Your LTFT Banding', ['Unbanded', 'FC', 'FB', 'FA'])
+                elif ltft == False:
+                    manuallySelectedBinding = st.selectbox('Select Your Banding', ['Unbanded', '1C', '1B', '1A'])
+                    st.write('[Summary of Banding](https://www.bma.org.uk/pay-and-contracts/pay/pay-banding/how-pay-banding-works)')
+        elif contractSelected[0] == 2016:
             st.header('2016 Contract Details')
             st.subheader('Antisocial Hours')
             antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
             st.write('Do you recieve the Non-Resident On Call Supplement?')
             nroc = st.checkbox('Recieve Non-Resident On Call')
+        if contractSelected[0] != contractSelected[1]:
+            # Avoid Duplicating Display of Sliders
+            if contractSelected[1] == 2002: 
+                st.subheader('2002 Contract Antisocial Hours')
+                antisocialHoursOld = st.slider('Hours Worked Outside of Monday - Friday 07:00 - 19:00', 0, 20, 12)
+            elif contractSelected[1] == 2016: 
+                st.header('2016 Contract Details')
+                st.subheader('Antisocial Hours')
+                antisocialHours = st.slider('Hours Worked Outside of 07:00 - 21:00', 0, 20, 6)
+                st.write('Do you recieve the Non-Resident On Call Supplement?')
+                nroc = st.checkbox('Recieve Non-Resident On Call')
 
-    # Determine which contract to use to calculate Pay Data for Selected and Current Year
-    if contractSelected[0] == 2002: 
-        payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
-    elif contractSelected[0] == 2016: 
-        payArrayOld = payNewContract(slider_year_selected.year, grade, nroc, ltft, country ,weekendsWorked)
-    if contractSelected[1] == 2002: 
-        payArray =  payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
-    elif contractSelected[1] == 2016: 
-        payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
-
-    # Determine Inflation Change 
-    currentInflation = getRPI(adjustedDate.year, inflationMeasure)
-    selectedInflation = getRPI(slider_year_selected.year, inflationMeasure)
-    inflationChange = float(currentInflation) - float(selectedInflation)
-    inflationPercentage = float(currentInflation) / float(selectedInflation)
-
-    # Inflation for Display
-    inflationPercentageChange = float(inflationChange) / float(selectedInflation)
-    inflationPercentageDisplay = round(inflationPercentageChange * 100)
-
-    # Calculate Lossess Adjusting for Inflation
-    oldPayWithInflation = payArrayOld[0] * inflationPercentage
-    relativePayLoss = round(payArray[0] - oldPayWithInflation)
-    percentageLoss = round(relativePayLoss / payArray[0] * 100)
-    change = ""
-    if oldPayWithInflation < payArray[0]: 
-        change = "+Gain"
-    elif oldPayWithInflation > payArray[0]:
-        change = "-Loss"
-
-    # Show Pay + Inflation Details
-    st.header('Summary')
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric('Pay Loss', f'£{relativePayLoss}', change)    
-    with col2: 
-        st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
-        
-    with col3:
-        st.metric(f'{adjustedDate.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
-        st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
-        st.caption(f'Since {slider_year_selected.year}')
-
-    st.subheader('Calculation Breakdown')
-    st.caption(f'Disclaimer: Figures given are approximate. The accuracy can be improved by selecting 2002 Banding manually.')
-    # Show Calculation Details
-    col1, col2,= st.columns(2)
-    with col1:
+        # Determine which contract to use to calculate Pay Data for Selected and Current Year
         if contractSelected[0] == 2002: 
-            st.write(f'{slider_year_selected.year}')
-            st.caption(f'Your Pay: £{payArrayOld[0]}')
-            st.caption(f'Base Pay: £{payArrayOld[1]}')
-            st.caption(f'Your Banding: {payArrayOld[3]} = {payArrayOld[2]} Multiplier to Base')
-            st.caption('Based of the 2002 Contract')
-        if contractSelected[0] == 2016:
-            st.subheader(f'{slider_year_selected.year}')
-            st.caption(f'Your Pay: £{round(payArrayOld[0])}')
-            st.caption(f'Base Pay: £{round(payArrayOld[1])}')
-            st.caption(f'Antisocial Hours Supplement: £{round(payArrayOld[2])}')
-            if ltft == False: 
-                st.caption(f'Weekend Supplement: £{round(payArrayOld[4])}')
-                st.caption(f'Non Resident On Call Supplement: £{round(payArrayOld[5])}')
-                if ltft == True: 
-                    st.caption(f'Less Than Full Time Allowance: £{round(payArrayOld[6])}')
-                st.caption('Based of the 2016 Contract')
-        
-    with col2: 
+            payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
+        elif contractSelected[0] == 2016: 
+            payArrayOld = payNewContract(slider_year_selected.year, grade, nroc, ltft, country ,weekendsWorked)
         if contractSelected[1] == 2002: 
-            st.write(f'{adjustedDate.year}')
-            st.caption(f'Your Pay: £{payArray[0]}')
-            st.caption(f'Base Pay: £{payArray[1]}')
-            st.caption(f'Your Banding: {payArray[3]} = {payArrayOld[2]} Multiplier to Base')
-            st.caption('Based of the 2002 Contract')
-        
-        if contractSelected[1] == 2016:
-            st.write(f'{adjustedDate.year}')
-            st.caption(f'Your Pay: £{round(payArray[0])}')
-            st.caption(f'Base Pay: £{round(payArray[1])}')
-            st.caption(f'Antisocial Hours Supplement: £{round(payArray[2])}')
-            if ltft == False: 
-                st.caption(f'Supplement for > 40 Hours Per Week £{round(payArray[3])}')
-            st.caption(f'Weekend Supplement: £{round(payArray[4])}')
-            st.caption(f'Non Resident On Call Supplement: £{round(payArray[5])}')
-            if ltft == True: 
-                st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
-            st.caption('Based of the 2016 Contract')
-elif grade == 'Consultant':
-    if country != 'Northern Ireland':    
-        # Consultant Pay Section
-        st.subheader('Programmed Activities')
-        programmedActivities = st.slider('Average Number of Programmed Activities per Week', 1, 16, 10)
-        st.subheader('Number of Years as a Consultant')
-        yearsCompleted = st.slider('Years as a Consultant', 0, 30, 4)
-
-        #Pull Data 
-        payArrayOld = consultantContract(programmedActivities, slider_year_selected.year, grade ,yearsCompleted)
-        payArray = consultantContract(programmedActivities, adjustedDate.year, grade ,yearsCompleted)
+            payArray =  payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
+        elif contractSelected[1] == 2016: 
+            payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
 
         # Determine Inflation Change 
-        currentInflation = getRPI(adjustedDate.year, inflationMeasure)
-        selectedInflation = getRPI(slider_year_selected.year, inflationMeasure)
-        inflationChange = float(currentInflation) - float(selectedInflation)
-        inflationPercentage = float(currentInflation) / float(selectedInflation)
+        currentInflation = getInflationIndex(adjustedDate, inflationMeasure)
+        inflationBaseline = getInflationIndex(slider_year_selected, inflationMeasure)
+        inflationChange = float(currentInflation) - float(inflationBaseline)
+        inflationPercentage = float(currentInflation) / float(inflationBaseline)
 
         # Inflation for Display
-        inflationPercentageChange = float(inflationChange) / float(selectedInflation)
+        inflationPercentageChange = float(inflationChange) / float(inflationBaseline)
         inflationPercentageDisplay = round(inflationPercentageChange * 100)
 
         # Calculate Lossess Adjusting for Inflation
@@ -505,36 +427,125 @@ elif grade == 'Consultant':
             change = "-Loss"
 
         # Show Pay + Inflation Details
-            st.header('Summary')
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric('Pay Loss', f'£{relativePayLoss}', change)    
-            with col2: 
-                st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
-                
-            with col3:
-                st.metric(f'{adjustedDate.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
-                st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
-                st.caption(f'Since {slider_year_selected.year}')
+        st.header('Summary')
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric('Pay Loss', f'£{relativePayLoss}', change)    
+        with col2: 
+            st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
+            
+        with col3:
+            st.metric(f'{adjustedDate.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
+            st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
+            st.caption(f'Since {slider_year_selected.year}')
 
-            st.subheader('Calculation Breakdown')
-            st.caption(f'Disclaimer: Figures given are approximate only and purely based of your base salary. Based of 2003 Contract.')
-            # Show Calculation Details
-            col1, col2,= st.columns(2)
-            with col1:
+        st.subheader('Calculation Breakdown')
+        st.caption(f'Disclaimer: Figures given are approximate. The accuracy can be improved by selecting 2002 Banding manually.')
+        # Show Calculation Details
+        col1, col2,= st.columns(2)
+        with col1:
+            if contractSelected[0] == 2002: 
                 st.write(f'{slider_year_selected.year}')
                 st.caption(f'Your Pay: £{payArrayOld[0]}')
                 st.caption(f'Base Pay: £{payArrayOld[1]}')
-                st.caption(f'Based On {programmedActivities} Programmed Activities per Week')
-                st.caption(f'Nodal Point: {payArrayOld[2]}') 
+                st.caption(f'Your Banding: {payArrayOld[3]} = {payArrayOld[2]} Multiplier to Base')
+                st.caption('Based of the 2002 Contract')
+            if contractSelected[0] == 2016:
+                st.subheader(f'{slider_year_selected.year}')
+                st.caption(f'Your Pay: £{round(payArrayOld[0])}')
+                st.caption(f'Base Pay: £{round(payArrayOld[1])}')
+                st.caption(f'Antisocial Hours Supplement: £{round(payArrayOld[2])}')
+                if ltft == False: 
+                    st.caption(f'Weekend Supplement: £{round(payArrayOld[4])}')
+                    st.caption(f'Non Resident On Call Supplement: £{round(payArrayOld[5])}')
+                    if ltft == True: 
+                        st.caption(f'Less Than Full Time Allowance: £{round(payArrayOld[6])}')
+                    st.caption('Based of the 2016 Contract')
             
-                
-            with col2: 
+        with col2: 
+            if contractSelected[1] == 2002: 
                 st.write(f'{adjustedDate.year}')
                 st.caption(f'Your Pay: £{payArray[0]}')
                 st.caption(f'Base Pay: £{payArray[1]}')
-                st.caption(f'Based On {programmedActivities} Programmed Activities per Week')
-                st.caption(f'Nodal Pay Point: {payArray[2]}')
-                
-    else: 
-        st.subheader('Data Unavailable')
+                st.caption(f'Your Banding: {payArray[3]} = {payArrayOld[2]} Multiplier to Base')
+                st.caption('Based of the 2002 Contract')
+            
+            if contractSelected[1] == 2016:
+                st.write(f'{adjustedDate.year}')
+                st.caption(f'Your Pay: £{round(payArray[0])}')
+                st.caption(f'Base Pay: £{round(payArray[1])}')
+                st.caption(f'Antisocial Hours Supplement: £{round(payArray[2])}')
+                if ltft == False: 
+                    st.caption(f'Supplement for > 40 Hours Per Week £{round(payArray[3])}')
+                st.caption(f'Weekend Supplement: £{round(payArray[4])}')
+                st.caption(f'Non Resident On Call Supplement: £{round(payArray[5])}')
+                if ltft == True: 
+                    st.caption(f'Less Than Full Time Allowance: £{round(payArray[6])}')
+                st.caption('Based of the 2016 Contract')
+    elif grade == 'Consultant':
+        if country != 'Northern Ireland':    
+            # Consultant Pay Section
+            st.subheader('Programmed Activities')
+            programmedActivities = st.slider('Average Number of Programmed Activities per Week', 1, 16, 10)
+            st.subheader('Number of Years as a Consultant')
+            yearsCompleted = st.slider('Years as a Consultant', 0, 30, 4)
+
+            #Pull Data 
+            payArrayOld = consultantContract(programmedActivities, slider_year_selected.year, grade ,yearsCompleted)
+            payArray = consultantContract(programmedActivities, adjustedDate.year, grade ,yearsCompleted)
+
+            # Determine Inflation Change 
+            currentInflation = getInflationIndex(adjustedDate, inflationMeasure)
+            inflationBaseline = getInflationIndex(slider_year_selected, inflationMeasure)
+            inflationChange = float(currentInflation) - float(inflationBaseline)
+            inflationPercentage = float(currentInflation) / float(inflationBaseline)
+
+            # Inflation for Display
+            inflationPercentageChange = float(inflationChange) / float(inflationBaseline)
+            inflationPercentageDisplay = round(inflationPercentageChange * 100)
+
+            # Calculate Lossess Adjusting for Inflation
+            oldPayWithInflation = payArrayOld[0] * inflationPercentage
+            relativePayLoss = round(payArray[0] - oldPayWithInflation)
+            percentageLoss = round(relativePayLoss / payArray[0] * 100)
+            change = ""
+            if oldPayWithInflation < payArray[0]: 
+                change = "+Gain"
+            elif oldPayWithInflation > payArray[0]:
+                change = "-Loss"
+
+            # Show Pay + Inflation Details
+                st.header('Summary')
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric('Pay Loss', f'£{relativePayLoss}', change)    
+                with col2: 
+                    st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
+                    
+                with col3:
+                    st.metric(f'{adjustedDate.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
+                    st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
+                    st.caption(f'Since {slider_year_selected.year}')
+
+                st.subheader('Calculation Breakdown')
+                st.caption(f'Disclaimer: Figures given are approximate only and purely based of your base salary. Based of 2003 Contract.')
+                # Show Calculation Details
+                col1, col2,= st.columns(2)
+                with col1:
+                    st.write(f'{slider_year_selected.year}')
+                    st.caption(f'Your Pay: £{payArrayOld[0]}')
+                    st.caption(f'Base Pay: £{payArrayOld[1]}')
+                    st.caption(f'Based On {programmedActivities} Programmed Activities per Week')
+                    st.caption(f'Nodal Point: {payArrayOld[2]}') 
+                    
+                with col2: 
+                    st.write(f'{adjustedDate.year}')
+                    st.caption(f'Your Pay: £{payArray[0]}')
+                    st.caption(f'Base Pay: £{payArray[1]}')
+                    st.caption(f'Based On {programmedActivities} Programmed Activities per Week')
+                    st.caption(f'Nodal Pay Point: {payArray[2]}')
+                    
+        else: 
+            st.subheader('Data Unavailable')
+else: 
+    st.title(f'Data Not Avaliable for {adjustedDate.year}')
