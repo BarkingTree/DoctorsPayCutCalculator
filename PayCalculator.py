@@ -20,7 +20,7 @@ ltft = False
 from datetime import date, timedelta
 currentDate = date.today()
 yearsPost2022 = date.today().year - 2022 
-adjustedDate = currentDate - relativedelta(years= yearsPost2022)
+adjustedDate = currentDate - relativedelta(years= yearsPost2022, months= 1)
 # Prevents adjusted Date from going past 2022. This allows access to Quartely inflation figures but prevents applciation attempting to parse Pay JSON when no data is avaliable. 
 # Formally was adjustedDate = currentDate - relativedelta(years = 1, months = 0)
 
@@ -53,7 +53,7 @@ def getInflationIndex(date, inflationMeasure):
     if inflationMeasure == 'CPIH': 
         adjustedArrayIndex = (((date.year - 1987) * 4) - 4) + ((date.month-1)//3)
     inflationArray = getInflationJSON(inflationMeasure)
-    induvidualQuarter = inflationArray[adjustedArrayIndex]
+    induvidualQuarter = inflationArray[adjustedArrayIndex-1]
     inflationIndex = induvidualQuarter["value"]
     return inflationIndex
 
@@ -73,15 +73,15 @@ def getPayData(yearSelected, gradeSelected, country):
     pay = induvidualYear[gradeSelected]
     return pay
 
-def payNewContract(yearSelected, gradeSelected, nroc, ltft, country ,weekendsWorked = '<1:8'): 
+def payNewContract(yearSelected, gradeSelected, hoursWorkedLocal, nroc, ltft, country, antisocialHoursLocal, weekendsWorked = '<1:8',): 
     weekAllowance = weekendAllowance(yearSelected)
     basePay = getPayData(yearSelected, gradeSelected, country)
     resultsArray = []
     # Caluclate Pay if < 40 Hours Per Week
     if ltft == True:
-        percentageWorked = hoursWorked / 40
+        percentageWorked = hoursWorkedLocal / 40
         oneHourPay = basePay / 40
-        ltftPay = round(oneHourPay * hoursWorked)
+        ltftPay = round(oneHourPay * hoursWorkedLocal)
         ltftAllowance = 1000
         if weekendsWorked == '<1:8': 
             weekendMultiplier = weekAllowance[0]
@@ -133,8 +133,8 @@ def payNewContract(yearSelected, gradeSelected, nroc, ltft, country ,weekendsWor
             nrocPay = nrocMultiplier * basePay
         else:
             nrocPay = 0
-        antisocialPay = basePay * (antisocialHours * antiocialEnhancementPerHour) 
-        additionalHoursPay = basePay * ((hoursWorked - 40) * additionalHourEnhancement)
+        antisocialPay = basePay * (antisocialHoursLocal * antiocialEnhancementPerHour) 
+        additionalHoursPay = basePay * ((hoursWorkedLocal - 40) * additionalHourEnhancement)
         weekendPay = basePay * (weekendMultiplier / 100)
         totalPayRaw = basePay + additionalHoursPay + antisocialPay + weekendPay + nrocPay
         totalPayRounded = round(totalPayRaw)
@@ -345,7 +345,9 @@ grade = st.selectbox(
      ('FY1', 'FY2', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7', 'ST8', 'Consultant'))
 
     # Check if Values Avaliable 
-if payNewContract(adjustedDate.year, grade, False, False, country, '<1:8') != 0:   
+
+
+if payNewContract(adjustedDate.year, grade, 40, False, False, country, 0, '<1:8') != 0:   
     # Junior Doctor Pay 
     if grade != 'Consultant': 
         st.subheader('Average Hours Worked per Week')
@@ -400,11 +402,11 @@ if payNewContract(adjustedDate.year, grade, False, False, country, '<1:8') != 0:
         if contractSelected[0] == 2002: 
             payArrayOld = payOldContract(slider_year_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
         elif contractSelected[0] == 2016: 
-            payArrayOld = payNewContract(slider_year_selected.year, grade, nroc, ltft, country ,weekendsWorked)
+            payArrayOld = payNewContract(slider_year_selected.year, grade, hoursWorked, nroc, ltft, country, antisocialHours, weekendsWorked)
         if contractSelected[1] == 2002: 
             payArray =  payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
         elif contractSelected[1] == 2016: 
-            payArray = payNewContract(adjustedDate.year, grade, nroc, ltft, country, weekendsWorked)
+            payArray = payNewContract(adjustedDate.year, grade, hoursWorked, nroc, ltft, country, antisocialHours, weekendsWorked)
 
         # Determine Inflation Change 
         currentInflation = getInflationIndex(adjustedDate, inflationMeasure)
