@@ -21,7 +21,9 @@ from datetime import date, timedelta
 currentDate = date.today()
 yearsPost2022 = date.today().year - 2022 
 adjustedDate = currentDate - relativedelta(years= yearsPost2022, months= 1)
-# Prevents adjusted Date from going past 2022. This allows access to Quartely inflation figures but prevents applciation attempting to parse Pay JSON when no data is avaliable. 
+# Prevents adjusted Date from going past 2022. This allows access to Quartely inflation figures 
+# but prevents applciation attempting to parse Pay JSON when no data is avaliable. 
+
 # Formally was adjustedDate = currentDate - relativedelta(years = 1, months = 0)
 
 def weekendAllowance(yearSelected): 
@@ -30,7 +32,6 @@ def weekendAllowance(yearSelected):
     induvidualYear = jsonData[str(yearSelected)]
     allowance = induvidualYear['WeekendAllowance']
     return allowance
-
 
 # Get RPI / CPIH Data and Cache It
 @st.cache
@@ -56,7 +57,6 @@ def getInflationIndex(date, inflationMeasure):
     induvidualQuarter = inflationArray[adjustedArrayIndex-1]
     inflationIndex = induvidualQuarter["value"]
     return inflationIndex
-
 
 # Get Pay Data from GitHub Repo
 def getPayData(yearSelected, gradeSelected, country): 
@@ -305,31 +305,38 @@ def consultantContract(programmedActivities, year, grade, yearsAsCon):
 with st.container():
     st.title('Doctors Pay Cut Calculator')
     st.subheader('Calculate Your Pay Cut')
-    
-    # Link to Campaign 
-    # st.write("[Join the Campaign](https://linktr.ee/Medics4PayRestoration)")
 
 country = st.selectbox(
     'Select Country',
     ('England', 'Scotland' ,'Wales', 'Northern Ireland')
 )
 
-st.subheader('Select Inflation Year')
+st.subheader('Select Inflation Quarter')
 slider_year_selected = st.slider(
-     "Select Quarter to Compare to",
+     "Select Quarter for Comparison.",
      min_value= date(2008, 1, 1),
      max_value= adjustedDate,
      value= date(2008, 1, 1),
      # Change to month = 1 on release
      format="Qo/YYYY",
-     step= timedelta(days=90)
+     step= timedelta(days=365.5/4)
+     )
+
+st.subheader('Select Pay Year (2021 / 2022)')
+slider_PayYear_selected = st.slider(
+     "Select Pay Year. For some Countries & Grades pay data from 2021 is the latest avaliable.",
+     min_value= date(2021, 1, 1),
+     max_value= adjustedDate,
+     value= adjustedDate,
+     # Change to month = 1 on release
+     format="YYYY"
      )
 
 # Determine Contracts to Display and Use
 if country == 'England':
-    if slider_year_selected < date(2017, 1, 1): 
+    if slider_year_selected < date(2016, 1, 1): 
         contractSelected = [2002, 2016]
-    elif slider_year_selected > date(2017, 1, 1): 
+    elif slider_year_selected > date(2016, 1, 1): 
         contractSelected = [2016, 2016]
 else:
 # All other Countries       
@@ -346,8 +353,7 @@ grade = st.selectbox(
 
     # Check if Values Avaliable 
 
-
-if payNewContract(adjustedDate.year, grade, 40, False, False, country, 0, '<1:8') != 0:   
+if payNewContract(slider_PayYear_selected.year, grade, 40, False, False, country, 0, '<1:8')[0] > 0:   
     # Junior Doctor Pay 
     if grade != 'Consultant': 
         st.subheader('Average Hours Worked per Week')
@@ -404,9 +410,9 @@ if payNewContract(adjustedDate.year, grade, 40, False, False, country, 0, '<1:8'
         elif contractSelected[0] == 2016: 
             payArrayOld = payNewContract(slider_year_selected.year, grade, hoursWorked, nroc, ltft, country, antisocialHours, weekendsWorked)
         if contractSelected[1] == 2002: 
-            payArray =  payOldContract(adjustedDate.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
+            payArray =  payOldContract(slider_PayYear_selected.year, grade, hoursWorked, antisocialHoursOld, ltft, country, weekendsWorked, manualBanding, manuallySelectedBinding)
         elif contractSelected[1] == 2016: 
-            payArray = payNewContract(adjustedDate.year, grade, hoursWorked, nroc, ltft, country, antisocialHours, weekendsWorked)
+            payArray = payNewContract(slider_PayYear_selected.year, grade, hoursWorked, nroc, ltft, country, antisocialHours, weekendsWorked)
 
         # Determine Inflation Change 
         currentInflation = getInflationIndex(adjustedDate, inflationMeasure)
@@ -437,7 +443,7 @@ if payNewContract(adjustedDate.year, grade, 40, False, False, country, 0, '<1:8'
             st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
             
         with col3:
-            st.metric(f'{adjustedDate.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
+            st.metric(f'{slider_PayYear_selected.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
             st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
             st.caption(f'Since {slider_year_selected.year}')
 
@@ -453,7 +459,7 @@ if payNewContract(adjustedDate.year, grade, 40, False, False, country, 0, '<1:8'
                 st.caption(f'Your Banding: {payArrayOld[3]} = {payArrayOld[2]} Multiplier to Base')
                 st.caption('Based of the 2002 Contract')
             if contractSelected[0] == 2016:
-                st.subheader(f'{slider_year_selected.year}')
+                st.write(f'{slider_year_selected.year}')
                 st.caption(f'Your Pay: £{round(payArrayOld[0])}')
                 st.caption(f'Base Pay: £{round(payArrayOld[1])}')
                 st.caption(f'Antisocial Hours Supplement: £{round(payArrayOld[2])}')
@@ -466,14 +472,14 @@ if payNewContract(adjustedDate.year, grade, 40, False, False, country, 0, '<1:8'
             
         with col2: 
             if contractSelected[1] == 2002: 
-                st.write(f'{adjustedDate.year}')
+                st.write(f'{slider_PayYear_selected.year}')
                 st.caption(f'Your Pay: £{payArray[0]}')
                 st.caption(f'Base Pay: £{payArray[1]}')
                 st.caption(f'Your Banding: {payArray[3]} = {payArrayOld[2]} Multiplier to Base')
                 st.caption('Based of the 2002 Contract')
             
             if contractSelected[1] == 2016:
-                st.write(f'{adjustedDate.year}')
+                st.write(f'{slider_PayYear_selected.year}')
                 st.caption(f'Your Pay: £{round(payArray[0])}')
                 st.caption(f'Base Pay: £{round(payArray[1])}')
                 st.caption(f'Antisocial Hours Supplement: £{round(payArray[2])}')
@@ -494,7 +500,7 @@ if payNewContract(adjustedDate.year, grade, 40, False, False, country, 0, '<1:8'
 
             #Pull Data 
             payArrayOld = consultantContract(programmedActivities, slider_year_selected.year, grade ,yearsCompleted)
-            payArray = consultantContract(programmedActivities, adjustedDate.year, grade ,yearsCompleted)
+            payArray = consultantContract(programmedActivities, slider_PayYear_selected.year, grade ,yearsCompleted)
 
             # Determine Inflation Change 
             currentInflation = getInflationIndex(adjustedDate, inflationMeasure)
@@ -525,7 +531,7 @@ if payNewContract(adjustedDate.year, grade, 40, False, False, country, 0, '<1:8'
                     st.metric(f'{slider_year_selected.year} Pay Adjusted For Inflation', f'£{round(oldPayWithInflation)}') 
                     
                 with col3:
-                    st.metric(f'{adjustedDate.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
+                    st.metric(f'{slider_PayYear_selected.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
                     st.metric(f'{inflationMeasure} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
                     st.caption(f'Since {slider_year_selected.year}')
 
@@ -541,13 +547,12 @@ if payNewContract(adjustedDate.year, grade, 40, False, False, country, 0, '<1:8'
                     st.caption(f'Nodal Point: {payArrayOld[2]}') 
                     
                 with col2: 
-                    st.write(f'{adjustedDate.year}')
+                    st.write(f'{slider_PayYear_selected.year}')
                     st.caption(f'Your Pay: £{payArray[0]}')
                     st.caption(f'Base Pay: £{payArray[1]}')
                     st.caption(f'Based On {programmedActivities} Programmed Activities per Week')
                     st.caption(f'Nodal Pay Point: {payArray[2]}')
-                    
         else: 
             st.subheader('Data Unavailable')
 else: 
-    st.title(f'Data Not Avaliable for {adjustedDate.year}')
+    st.write(f'Data Not Avaliable for {slider_PayYear_selected.year} Pay Year. Please Select an Earlier Year')
