@@ -347,14 +347,14 @@ comparisonInflationQuarter = st.slider(
      step= timedelta(days=365.5/4)
      )
 
-formattedAdjustedDate = f'Q{((comparisonInflationQuarter.month-1)//3 + 1)} {comparisonInflationQuarter.year}'
+displayableComparatorDate = f'Q{((comparisonInflationQuarter.month-1)//3 + 1)} {comparisonInflationQuarter.year}'
 
 inflationMeasure = st.selectbox(
     'Inflation Measure',
     ('RPI', 'CPIH')
 )
-displayableDate = f'Q{((baselineInflationQuarter.month-1)//3 + 1)} {baselineInflationQuarter.year}'
-st.write(f'Comparing: {displayableDate} {inflationMeasure} to {formattedAdjustedDate} {inflationMeasure}.')
+displayableBaselineDate = f'Q{((baselineInflationQuarter.month-1)//3 + 1)} {baselineInflationQuarter.year}'
+st.write(f'Comparing: {displayableBaselineDate} {inflationMeasure} to {displayableComparatorDate} {inflationMeasure}.')
      
 # Determine Contracts to Display and Use
 if country == 'England':
@@ -454,7 +454,8 @@ if payOldContract(comparisonInflationQuarter.year, grade, 40, 0, False, country,
         monthlyPercentLoss = round((relativePayLoss / 12)/(payArray[0]/12)*100)
 
         # Show Pay + Inflation Details
-        st.header('Summary')
+        st.header(f'Summary')
+        st.write(f'Pay changes from {baselineInflationQuarter.year} - {comparisonInflationQuarter.year} adjusted for inflation using {inflationMeasure} index ({displayableBaselineDate} - {displayableComparatorDate})')
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric('Yearly Change', f'£{relativePayLoss}', change)
@@ -464,8 +465,8 @@ if payOldContract(comparisonInflationQuarter.year, grade, 40, 0, False, country,
          
         with col3:
             st.metric(f'{comparisonInflationQuarter.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
-            st.metric(f'{inflationMeasure} {displayableDate} Inflation Index:', inflationBaseline)
-            st.metric(f'{inflationMeasure} {formattedAdjustedDate} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
+            st.metric(f'{inflationMeasure} {displayableBaselineDate} Inflation Index:', inflationBaseline)
+            st.metric(f'{inflationMeasure} {displayableComparatorDate} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
             st.caption(f'Since {baselineInflationQuarter.year}')
 
         st.subheader('Calculation Breakdown')
@@ -548,6 +549,7 @@ if payOldContract(comparisonInflationQuarter.year, grade, 40, 0, False, country,
 
             # Show Pay + Inflation Details
             st.header('Summary')
+            st.write(f'Pay changes from {baselineInflationQuarter.year} - {comparisonInflationQuarter.year} adjusted for inflation using {inflationMeasure} index ({displayableBaselineDate} - {displayableComparatorDate}')
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric('Yearly Change', f'£{relativePayLoss}', change)    
@@ -557,8 +559,8 @@ if payOldContract(comparisonInflationQuarter.year, grade, 40, 0, False, country,
                 
             with col3:
                 st.metric(f'{comparisonInflationQuarter.year} Pay', f'£{payArray[0]}', f'{percentageLoss}%')
-                st.metric(f'{inflationMeasure} {displayableDate} Inflation Index:', inflationBaseline)
-                st.metric(f'{inflationMeasure} {formattedAdjustedDate} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
+                st.metric(f'{inflationMeasure} {displayableBaselineDate} Inflation Index:', inflationBaseline)
+                st.metric(f'{inflationMeasure} {displayableComparatorDate} Inflation Index:', currentInflation, f'{inflationPercentageDisplay}%')
                 st.caption(f'Since {baselineInflationQuarter.year}')
 
             st.subheader('Calculation Breakdown')
