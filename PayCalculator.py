@@ -321,10 +321,7 @@ grade = st.selectbox(
 # This prevents data being displayed for those Countries without Pay Data for 2022 Year.
 if country == 'England':
     maxYear = maxYear
-if country == 'England' and grade == 'Consultant':
-    maxYear = maxYear - relativedelta(years=yearsPost2022, months= currentDate.month) + relativedelta(months=4)
-elif country != 'England':
-    # All other Countries
+if country != 'England' or grade == 'Consultant':
     maxYear = maxYear - relativedelta(years=yearsPost2022, months= currentDate.month) + relativedelta(months=4)
     
 st.subheader('Inflation Metrics')
@@ -366,7 +363,6 @@ if country == 'England':
         contractSelected = [2016, 2016]
 else:
     # All other Countries
-    comparisonInflationQuarter = comparisonInflationQuarter - relativedelta(years=1)
     contractSelected = [2002, 2002]
 
 # Check if Values Avaliable 
