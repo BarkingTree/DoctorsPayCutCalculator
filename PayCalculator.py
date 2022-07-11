@@ -328,7 +328,7 @@ st.subheader('Inflation Metrics')
 baselineInflationQuarter = st.slider(
      "Baseline Inflation Quarter.",
      min_value= date(2008, 1, 1),
-     max_value= maxYear,
+     max_value= maxYear - relativedelta(day=1),
      value= date(2008, 1, 1),
      # Change to month = 1 on release
      format="Qo/YYYY",
@@ -466,7 +466,7 @@ if payOldContract(comparisonInflationQuarter.year, grade, 40, 0, False, country,
             st.caption(f'Since {baselineInflationQuarter.year}')
 
         st.subheader('Calculation Breakdown')
-        st.caption(f'Disclaimer: Figures given are approximate. The accuracy can be improved by selecting 2002 Banding manually.')
+        st.caption(f'Disclaimer: Figures given are approximate. To improve accuracy please manually select the banding for the 2002 contract.')
         # Show Calculation Details
         col1, col2,= st.columns(2)
         with col1:
