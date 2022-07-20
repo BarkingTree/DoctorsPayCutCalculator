@@ -20,12 +20,12 @@ ltft = False
 from datetime import date, timedelta
 currentDate = date.today()
 yearsPost2022 = date.today().year - 2022
-maxYear = currentDate - relativedelta(years= yearsPost2022, months= 4)
-
-
+# Alter to Allow data from later than 2022
+maxYear = currentDate - relativedelta(years= yearsPost2022, months= 3, weeks=4)
 
 # Prevents adjusted Date from going past 2022. This allows access to Quartely inflation figures 
 # but prevents applciation attempting to parse Pay JSON when no data is avaliable. 
+# ONS Appears to release data the Penultimate Wednesday of every Month. 
 
 # Formally was adjustedDate = currentDate - relativedelta(years = 1, months = 0)
 
@@ -319,7 +319,7 @@ grade = st.selectbox(
      ('FY1', 'FY2', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7', 'ST8', 'Consultant'))
 
 # This prevents data being displayed for those Countries without Pay Data for 2022 Year.
-if country == 'England':
+if country == 'England' or 'Scotland' or 'Wales':
     maxYear = maxYear
 if country != 'England' or grade == 'Consultant':
     maxYear = maxYear - relativedelta(years=yearsPost2022, months= currentDate.month) + relativedelta(months=4)
