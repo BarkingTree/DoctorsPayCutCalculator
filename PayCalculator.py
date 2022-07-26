@@ -355,11 +355,11 @@ st.write(f'Comparing: {displayableBaselineDate} {inflationMeasure} to {displayab
      
 # Determine Contracts to Display and Use
 if country == 'England':
-    if baselineInflationQuarter < date(2016, 1, 1) and comparisonInflationQuarter > date(2016, 1, 1): 
+    if baselineInflationQuarter < date(2017, 1, 1) and comparisonInflationQuarter > date(2017, 1, 1): 
         contractSelected = [2002, 2016]
-    elif baselineInflationQuarter < date(2016, 1, 1) and comparisonInflationQuarter < date(2016, 1, 1): 
+    elif baselineInflationQuarter < date(2017, 1, 1) and comparisonInflationQuarter < date(2017, 1, 1): 
         contractSelected = [2002, 2002]
-    elif baselineInflationQuarter > date(2016, 1, 1): 
+    elif baselineInflationQuarter > date(2017, 1, 1): 
         contractSelected = [2016, 2016]
 else:
     # All other Countries
