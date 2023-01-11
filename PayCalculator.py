@@ -21,7 +21,7 @@ from datetime import date, timedelta
 currentDate = date.today()
 yearsPost2022 = date.today().year - 2023
 # Alter to Allow data from later than 2022
-maxYear = currentDate - relativedelta(years= 1, months= 3, weeks=4)
+maxYear = currentDate - relativedelta(years= yearsPost2022, months= 3, weeks=4)
 
 # Prevents adjusted Date from going past 2022. This allows access to Quartely inflation figures 
 # but prevents applciation attempting to parse Pay JSON when no data is avaliable. 
