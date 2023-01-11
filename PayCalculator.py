@@ -19,7 +19,7 @@ ltft = False
 # Dates 
 from datetime import date, timedelta
 currentDate = date.today()
-yearsPost2022 = date.today().year - 2022
+yearsPost2022 = date.today().year - 2023
 # Alter to Allow data from later than 2022
 maxYear = currentDate - relativedelta(years= yearsPost2022, months= 3, weeks=4)
 
