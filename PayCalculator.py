@@ -20,8 +20,8 @@ ltft = False
 from datetime import date, timedelta
 currentDate = date.today()
 yearsPost2022 = date.today().year - 2023
-# Alter to Allow data from later than 2022
-maxYear = currentDate - relativedelta(years= yearsPost2022, months= 3, weeks=4)
+# Alter to Allow data from later than 2023
+maxYear = date(year=2023, month=12, day=31)
 
 # Prevents adjusted Date from going past 2022. This allows access to Quartely inflation figures 
 # but prevents applciation attempting to parse Pay JSON when no data is avaliable. 
@@ -320,7 +320,7 @@ grade = st.selectbox(
 
 # This prevents data being displayed for those Countries without Pay Data for 2022 Year.
 if country == 'England' or country == 'Scotland' or country == 'Wales':
-    maxYear = maxYear
+    maxYear = maxYear - relativedelta(years=0, months= currentDate.month) + relativedelta(months=4)
 if country == 'Northern Ireland' or grade == 'Consultant':
     maxYear = maxYear - relativedelta(years=yearsPost2022, months= currentDate.month) + relativedelta(months=4)
     
