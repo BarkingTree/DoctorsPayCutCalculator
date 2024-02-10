@@ -320,7 +320,7 @@ grade = st.selectbox(
 
 # This prevents data being displayed for those Countries without Pay Data for 2022 Year.
 if country == 'England' or country == 'Scotland' or country == 'Wales':
-    maxYear = maxYear - relativedelta(years=0, months= currentDate.month) + relativedelta(months=4)
+    maxYear = maxYear - relativedelta(years=0, months= currentDate.month) - relativedelta(months=4)
 if country == 'Northern Ireland':
     maxYear = date(year=2022, month=12, day=31)
     
