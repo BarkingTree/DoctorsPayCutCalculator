@@ -319,9 +319,9 @@ grade = st.selectbox(
      ('FY1', 'FY2', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7', 'ST8', 'Consultant'))
 
 # This prevents data being displayed for those Countries without Pay Data for 2022 Year.
-if country == 'England' or country == 'Scotland':
+if country == 'England' or country == 'Scotland' or country == 'Wales':
     maxYear = maxYear - relativedelta(years=0, months= currentDate.month) + relativedelta(months=4)
-if country == 'Northern Ireland' or country == 'Wales':
+if country == 'Northern Ireland':
     maxYear = date(year=2022, month=12, day=31)
     
 st.subheader('Inflation Metrics')
