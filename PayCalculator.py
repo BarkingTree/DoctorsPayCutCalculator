@@ -323,7 +323,7 @@ if country == 'England' or country == 'Scotland' or country == 'Wales':
     maxYear = maxYear - relativedelta(years=0, months= currentDate.month) - relativedelta(months=4)
 if country == 'Northern Ireland':
     maxYear = date(year=2022, month=12, day=31)
-    
+     
 st.subheader('Inflation Metrics')
 baselineInflationQuarter = st.slider(
      "Baseline Inflation Quarter.",
